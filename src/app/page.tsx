@@ -2,11 +2,6 @@
 
 import { useRef } from 'react';
 
-const metadata = {
-  title: 'Nidhil Nayudu',
-  description: 'Coming soon...',
-};
-
 export default function Home() {
   const homeRef = useRef<HTMLDivElement>(null);
   const musicRef = useRef<HTMLDivElement>(null);
