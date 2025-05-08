@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import NowPlaying from '@/components/NowPlaying';
 
 export default function Home() {
   const homeRef = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ export default function Home() {
 
         <h2 className="text-2xl sm:text-4xl font-medium text-emerald-400 flex items-center gap-2 mb-6">
           <span className="text-2xl">🎧</span>
-          <span className="italic text-white/80">What I’ve been listening to</span>
+          <span className="italic text-white/80">What I've been listening to</span>
         </h2>
 
         <div className="w-full max-w-sm sm:max-w-md md:max-w-lg flex flex-col gap-4">
@@ -57,7 +58,6 @@ export default function Home() {
             'https://open.spotify.com/embed/track/6YG4gGjVGf2IzNmxZUOLsV?utm_source=generator',
             'https://open.spotify.com/embed/track/38rCgMdqt97TcHeSaYsydV?utm_source=generator',
             'https://open.spotify.com/embed/track/2uaGdbU9Z3UaaC1DIzrUJO?utm_source=generator&theme=0',
-            
           ].map((url, idx) => (
             <iframe
               key={idx}
