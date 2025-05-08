@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import NowPlaying from '@/components/NowPlaying';
 
 export default function Home() {
   const homeRef = useRef<HTMLDivElement>(null);
@@ -50,7 +49,7 @@ export default function Home() {
 
         <h2 className="text-2xl sm:text-4xl font-medium text-emerald-400 flex items-center gap-2 mb-6">
           <span className="text-2xl">🎧</span>
-          <span className="italic text-white/80">What I've been listening to</span>
+          <span className="italic text-white/80">What I&apos;ve been listening to</span>
         </h2>
 
         <div className="w-full max-w-sm sm:max-w-md md:max-w-lg flex flex-col gap-4">
