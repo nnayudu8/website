@@ -70,7 +70,7 @@ export async function GET() {
       next: { revalidate: 30 }, // Cache for 30 seconds
     });
 
-    if (response.status === 204 || response.status > 400) {
+    if (!response || response.status === 204 || response.status > 400) {
       return NextResponse.json({ isPlaying: false });
     }
 
