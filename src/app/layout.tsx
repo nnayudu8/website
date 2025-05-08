@@ -12,14 +12,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '40px',
-            zIndex: 1000,
-          }}
+          className="
+            fixed
+            bottom-4
+            left-1/2
+            -translate-x-1/2
+            z-50
+            w-full
+            flex
+            justify-center
+            px-2
+            sm:left-auto
+            sm:right-4
+            sm:translate-x-0
+            sm:w-auto
+            sm:justify-end
+          "
         >
-          <NowPlaying />
+          <div className="max-w-[95vw] sm:max-w-md">
+            <NowPlaying />
+          </div>
         </div>
       </body>
     </html>

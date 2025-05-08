@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaSpotify } from 'react-icons/fa';
 
 interface NowPlayingData {
@@ -16,6 +16,24 @@ interface NowPlayingData {
 
 export default function NowPlaying() {
   const [data, setData] = useState<NowPlayingData>({ isPlaying: false });
+  const [isMobile, setIsMobile] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isScrollingLeft, setIsScrollingLeft] = useState(false);
+  const [isScrollingRight, setIsScrollingRight] = useState(false);
+  const [isMobileAnimating, setIsMobileAnimating] = useState(false);
+  const [transitionDuration, setTransitionDuration] = useState('4s');
+  const [scrollDistance, setScrollDistance] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      if (typeof window === 'undefined') return false;
+      const ua = navigator.userAgent;
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    };
+    setIsMobile(checkMobile());
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +50,83 @@ export default function NowPlaying() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Calculate scroll distance on scroll start
+  const calculateScrollDistance = () => {
+    if (containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const textWidth = textRef.current.scrollWidth;
+      if (textWidth > containerWidth) {
+        setScrollDistance(containerWidth - textWidth - 16); // -16 for a little padding
+      } else {
+        setScrollDistance(0);
+      }
+    }
+  };
+
+  // Start left scroll
+  const startScrollLeft = () => {
+    calculateScrollDistance();
+    setTransitionDuration('4s');
+    setIsScrollingRight(false);
+    setIsScrollingLeft(true);
+  };
+
+  // Start right scroll (reset)
+  const startScrollRight = () => {
+    setTransitionDuration('0.6s');
+    setIsScrollingLeft(false);
+    setIsScrollingRight(true);
+  };
+
+  // Desktop: on hover
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (!isMobile) startScrollLeft();
+  };
+
+  // Desktop: on mouse leave
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    if (!isMobile && isScrollingLeft) {
+      setTimeout(() => {
+        startScrollRight();
+      }, 120);
+    }
+  };
+
+  // Mobile: on tap
+  const handleClick = () => {
+    if (isMobile && !isScrollingLeft && !isScrollingRight && !isMobileAnimating) {
+      setIsMobileAnimating(true);
+      startScrollLeft();
+    }
+  };
+
+  // On transition end
+  const handleTransitionEnd = () => {
+    if (isScrollingLeft) {
+      setTimeout(() => {
+        startScrollRight();
+      }, 350);
+    } else if (isScrollingRight) {
+      setTimeout(() => {
+        setIsScrollingRight(false);
+        setIsMobileAnimating(false);
+        // Only loop on desktop
+        if (isHovering && !isMobile) {
+          setTimeout(() => {
+            startScrollLeft();
+          }, 120);
+        }
+      }, 120);
+    }
+  };
+
+  // Calculate transform
+  let transform = 'translateX(0px)';
+  if (isScrollingLeft) transform = `translateX(${scrollDistance}px)`;
+  if (isScrollingRight) transform = 'translateX(0px)';
 
   // Negative space equalizer bars (white bars on transparent background)
   const Bars = () => (
@@ -63,11 +158,8 @@ export default function NowPlaying() {
 
   return (
     <div
-      className="flex items-center gap-4 px-6 py-3 rounded-full"
+      className="flex items-center gap-4 px-4 py-3 rounded-full max-w-[95vw] sm:max-w-md"
       style={{
-        minWidth: 320,
-        maxWidth: 480,
-        width: '100%',
         background: 'rgba(0,0,0,0.25)',
         boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)',
         backdropFilter: 'blur(8px)',
@@ -75,15 +167,34 @@ export default function NowPlaying() {
       }}
     >
       <Bars />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-white truncate">{data.isPlaying ? data.title : 'Not playing'}</span>
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            ref={containerRef}
+            className="relative overflow-hidden max-w-[180px] min-w-0"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
+          >
+            <span
+              ref={textRef}
+              className="font-bold text-white whitespace-nowrap inline-block"
+              style={{
+                transform,
+                transition: `transform ${transitionDuration} ${isScrollingRight ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'linear'}`,
+                willChange: 'transform',
+              }}
+              onTransitionEnd={handleTransitionEnd}
+            >
+              {data.isPlaying ? data.title : 'Not playing'}
+            </span>
+          </div>
           {data.isPlaying && (
-            <span className="text-emerald-100 text-xs font-medium truncate">{data.artist}</span>
+            <span className="text-emerald-100 text-xs font-medium truncate min-w-0">{data.artist}</span>
           )}
         </div>
         {data.isPlaying && (
-          <div className="text-xs text-gray-200 truncate">{data.album}</div>
+          <div className="text-xs text-gray-200 truncate min-w-0">{data.album}</div>
         )}
         {data.isPlaying && (
           <div className="w-full h-1 bg-white/20 rounded mt-2">

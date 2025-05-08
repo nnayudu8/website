@@ -1,37 +1,73 @@
 import { NextResponse } from 'next/server';
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
+const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
+const NOW_PLAYING_ENDPOINT = 'https://api.spotify.com/v1/me/player/currently-playing';
 
-const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
-const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
+const basic = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString('base64');
 
 async function getAccessToken() {
-  const response = await fetch(TOKEN_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${basic}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: REFRESH_TOKEN!,
-    }),
-  });
+  const maxRetries = 3;
+  let retryCount = 0;
 
-  return response.json();
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(TOKEN_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basic}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: process.env.SPOTIFY_REFRESH_TOKEN!,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      retryCount++;
+      if (retryCount === maxRetries) {
+        console.error('Failed to get access token after retries:', error);
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+    }
+  }
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      retryCount++;
+      if (retryCount === maxRetries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+    }
+  }
 }
 
 export async function GET() {
   try {
     const { access_token } = await getAccessToken();
 
-    const response = await fetch(NOW_PLAYING_ENDPOINT, {
+    const response = await fetchWithRetry(NOW_PLAYING_ENDPOINT, {
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
+      next: { revalidate: 30 }, // Cache for 30 seconds
     });
 
     if (response.status === 204 || response.status > 400) {
@@ -47,12 +83,12 @@ export async function GET() {
     const songUrl = song.item.external_urls.spotify;
 
     return NextResponse.json({
-      isPlaying,
-      title,
-      artist,
       album,
       albumArtUrl,
+      artist,
+      isPlaying,
       songUrl,
+      title,
     });
   } catch (error) {
     console.error('Error fetching Spotify data:', error);
