@@ -1,7 +1,11 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { FaSpotify } from 'react-icons/fa';
+import type { IconBaseProps } from 'react-icons';
+
+const SpotifyIcon = FaSpotify as React.FC<IconBaseProps>;
 
 interface NowPlayingData {
   isPlaying: boolean;
@@ -138,7 +142,7 @@ export default function NowPlaying() {
           style={{ animationPlayState: data.isPlaying ? 'running' : 'paused' }}
         />
       ))}
-      <style jsx>{`
+      <style>{`
         @keyframes eq-bar1 { 0%, 100% { height: 30%; } 50% { height: 100%; } }
         @keyframes eq-bar2 { 0%, 100% { height: 60%; } 50% { height: 80%; } }
         @keyframes eq-bar3 { 0%, 100% { height: 80%; } 50% { height: 40%; } }
@@ -205,7 +209,7 @@ export default function NowPlaying() {
           </div>
         )}
       </div>
-      <FaSpotify className="text-white/80 text-2xl ml-2 drop-shadow" />
+      <SpotifyIcon className="text-white/80 text-2xl ml-2 drop-shadow" aria-hidden="true" />
     </div>
   );
 } 
