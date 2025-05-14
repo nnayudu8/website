@@ -8,10 +8,9 @@ const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 // Create the Basic Auth header for Spotify API using client ID and secret
 const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
 
-// Spotify API endpoints for token and top tracks/artists
+// Spotify API endpoints for token and top tracks
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const TOP_TRACKS_ENDPOINT = `https://api.spotify.com/v1/me/top/tracks?limit=5&time_range=short_term`;
-const TOP_ARTISTS_ENDPOINT = `https://api.spotify.com/v1/me/top/artists?limit=5&time_range=short_term`;
 
 // Function to get a fresh access token using the refresh token
 async function getAccessToken() {
@@ -36,28 +35,21 @@ export async function GET() {
     // Get a fresh access token
     const { access_token } = await getAccessToken();
 
-    // Fetch top tracks and top artists in parallel
-    const [tracksRes, artistsRes] = await Promise.all([
-      fetch(TOP_TRACKS_ENDPOINT, {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }),
-      fetch(TOP_ARTISTS_ENDPOINT, {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }),
-    ]);
+    // Fetch top tracks
+    const tracksRes = await fetch(TOP_TRACKS_ENDPOINT, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
 
     // Parse the response data
     const tracksData = await tracksRes.json();
-    const artistsData = await artistsRes.json();
 
-    // Return the top tracks and artists as JSON
+    // Return the top tracks as JSON
     return NextResponse.json({
       topTracks: tracksData.items,
-      topArtists: artistsData.items,
     });
   } catch (error) {
-    // Log and return empty arrays on error
+    // Log and return empty array on error
     console.error('Error fetching Spotify top data:', error);
-    return NextResponse.json({ topTracks: [], topArtists: [] });
+    return NextResponse.json({ topTracks: [] });
   }
 } 

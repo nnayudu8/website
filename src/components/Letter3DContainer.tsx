@@ -23,15 +23,17 @@ function getFontPath(font: string, weight: string) {
 // Spinning 3D NN group
 function SpinningNN({ fontPath, color, bevel, text, size = 4 }: { fontPath: string, color: string, bevel: boolean, text: string, size?: number }) {
   const groupRef = useRef<THREE.Group>(null);
-  // Animate the group by rotating it a little every frame
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+
   useFrame(() => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.01; // Adjust speed here
+      // Normal slow rotation
+      groupRef.current.rotation.y += 0.01;
     }
   });
+
   return (
     <group ref={groupRef}>
-      {/* Center the text geometry at the origin for perfect spinning */}
       <Center>
         <Text3D
           font={fontPath}
@@ -44,9 +46,7 @@ function SpinningNN({ fontPath, color, bevel, text, size = 4 }: { fontPath: stri
           bevelSegments={8}
         >
           {text}
-          {/* Material for color and shininess */}
-          {/* <meshStandardMaterial color={color} metalness={0.7} roughness={0.25} /> */}
-          <meshStandardMaterial color={color}/>
+          <meshStandardMaterial ref={materialRef} color={color} metalness={0.4} roughness={0.1} />
         </Text3D>
       </Center>
     </group>
@@ -59,14 +59,12 @@ interface Letter3DContainerProps {
 }
 
 export default function Letter3DContainer({ className = '', size = 4 }: Letter3DContainerProps) {
-  // Static settings for the NN text
   const text = "NN";
   const fontIndex = 1; // optimer
   const weightIndex = 1; // bold
-  const color = "#dddddd"; // white
+  const color = "#ffffff"; // pure white
   const bevel = true;
 
-  // Get the current font and weight
   const currentFont = fonts[fontIndex];
   const currentWeight = currentFont.weights[weightIndex];
   const fontPath = getFontPath(currentFont.name, currentWeight);
@@ -74,15 +72,12 @@ export default function Letter3DContainer({ className = '', size = 4 }: Letter3D
   return (
     <div className={className} style={{ position: 'relative' }}>
       <Canvas camera={{ position: [0, 10, 18], fov: 30 }}>
-        {/* Lighting for 3D effect */}
         <ambientLight intensity={0.9} />
         <directionalLight position={[0, 10, 10]} intensity={1.2} />
         <directionalLight position={[0, -10, -10]} intensity={1.2} />
         <pointLight position={[10, 10, 10]} intensity={0.9} />
         <pointLight position={[-10, -10, -10]} intensity={0.9} />
-        {/* Spinning NN text */}
         <SpinningNN fontPath={fontPath} color={color} bevel={bevel} text={text} size={size} />
-        {/* Controls: allow horizontal rotation only, no zoom/pan */}
         <OrbitControls
           target={[0, 0, 0]}
           enablePan={false}

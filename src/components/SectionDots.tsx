@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState, RefObject } from 'react';
+import { useEffect, useState } from 'react';
 
 const sections = [
   { id: 'home', label: 'Home' },
   { id: 'music', label: 'Music' },
-  { id: 'n3d', label: '3D N' },
 ];
 
 interface SectionDotsProps {
-  sectionRefs: RefObject<HTMLDivElement | null>[];
+  sectionRefs: React.RefObject<HTMLDivElement>[];
 }
 
 export default function SectionDots({ sectionRefs }: SectionDotsProps) {

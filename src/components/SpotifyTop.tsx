@@ -10,16 +10,8 @@ interface Track {
   external_urls: { spotify: string };
 }
 
-interface Artist {
-  id: string;
-  name: string;
-  images: { url: string }[];
-  external_urls: { spotify: string };
-}
-
 export default function SpotifyTop() {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
-  const [topArtists, setTopArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,13 +20,10 @@ export default function SpotifyTop() {
       const res = await fetch('/api/spotify/top');
       const data = await res.json();
       setTopTracks(data.topTracks || []);
-      setTopArtists(data.topArtists || []);
       setLoading(false);
     };
     fetchData();
   }, []);
-
-  console.log(topTracks, topArtists);
 
   return (
     <div className="w-full max-w-4xl mx-auto flex justify-center">
@@ -60,36 +49,6 @@ export default function SpotifyTop() {
           </ul>
         )}
       </div>
-      {/*
-      <div>
-        <h3 className="text-xl font-bold mb-4 text-emerald-300">Top Artists</h3>
-        {loading ? (
-          <div className="text-gray-400">Loading...</div>
-        ) : (
-          <ul className="flex flex-col gap-4">
-            {topArtists.map((artist, idx) => (
-              <li key={artist.id} className="flex items-center gap-4 bg-white/5 rounded-lg p-2">
-                <img
-                  src={artist.images[0]?.url}
-                  alt={artist.name}
-                  className="w-12 h-12 rounded-full shadow"
-                />
-                <div className="flex-1 min-w-0">
-                  <a
-                    href={artist.external_urls.spotify}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-white truncate hover:underline"
-                  >
-                    {idx + 1}. {artist.name}
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      */}
     </div>
   );
 } 

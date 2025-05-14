@@ -1,6 +1,5 @@
 import "./globals.css";
 import NowPlaying from '@/components/NowPlaying';
-// import AnimatedBlobsBackground from '@/components/AnimatedBlobsBackground';
 
 export const metadata = {
   title: 'Nidhil Nayudu',
@@ -11,7 +10,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {/* <AnimatedBlobsBackground /> */}
         {children}
         <div
           className="
