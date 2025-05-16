@@ -3,32 +3,74 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Center, Text3D, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-// List of available fonts and weights
-const fonts = [
+/**
+ * Available fonts and their weights for the 3D text
+ */
+const FONTS = [
   { name: 'helvetiker', weights: ['regular', 'bold'] },
   { name: 'optimer', weights: ['regular', 'bold'] },
   { name: 'gentilis', weights: ['regular', 'bold'] },
   { name: 'droid_sans', weights: ['regular', 'bold'] },
   { name: 'droid_serif', weights: ['regular', 'bold'] },
-];
+] as const;
 
-// Helper to get the correct font file path
-function getFontPath(font: string, weight: string) {
+/**
+ * Constants for the 3D text configuration
+ */
+const TEXT_CONFIG = {
+  DEFAULT_SIZE: 4,
+  ROTATION_SPEED: 0.01,
+  BEVEL: {
+    THICKNESS: 0.2,
+    SIZE: 0.15,
+    SEGMENTS: 8
+  },
+  MATERIAL: {
+    METALNESS: 0.4,
+    ROUGHNESS: 0.1
+  },
+  CAMERA: {
+    POSITION: [0, 10, 18],
+    FOV: 30
+  },
+  LIGHTS: {
+    AMBIENT: { INTENSITY: 0.9 },
+    DIRECTIONAL: { INTENSITY: 1.2 },
+    POINT: { INTENSITY: 0.9 }
+  }
+} as const;
+
+/**
+ * Helper to get the correct font file path based on font name and weight
+ */
+function getFontPath(font: string, weight: string): string {
   if (font.startsWith('droid')) {
     return `/fonts/droid/${font}_${weight}.typeface.json`;
   }
   return `/fonts/${font}_${weight}.typeface.json`;
 }
 
-// Spinning 3D NN group
-function SpinningNN({ fontPath, color, bevel, text, size = 4 }: { fontPath: string, color: string, bevel: boolean, text: string, size?: number }) {
+/**
+ * Props for the SpinningNN component
+ */
+interface SpinningNNProps {
+  fontPath: string;
+  color: string;
+  bevel: boolean;
+  text: string;
+  size?: number;
+}
+
+/**
+ * SpinningNN component that renders a 3D text with continuous rotation
+ */
+function SpinningNN({ fontPath, color, bevel, text, size = TEXT_CONFIG.DEFAULT_SIZE }: SpinningNNProps) {
   const groupRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
 
   useFrame(() => {
     if (groupRef.current) {
-      // Normal slow rotation
-      groupRef.current.rotation.y += 0.01;
+      groupRef.current.rotation.y += TEXT_CONFIG.ROTATION_SPEED;
     }
   });
 
@@ -41,43 +83,61 @@ function SpinningNN({ fontPath, color, bevel, text, size = 4 }: { fontPath: stri
           height={size * 0.25}
           curveSegments={4}
           bevelEnabled={bevel}
-          bevelThickness={0.2}
-          bevelSize={0.15}
-          bevelSegments={8}
+          bevelThickness={TEXT_CONFIG.BEVEL.THICKNESS}
+          bevelSize={TEXT_CONFIG.BEVEL.SIZE}
+          bevelSegments={TEXT_CONFIG.BEVEL.SEGMENTS}
         >
           {text}
-          <meshStandardMaterial ref={materialRef} color={color} metalness={0.4} roughness={0.1} />
+          <meshStandardMaterial 
+            ref={materialRef} 
+            color={color} 
+            metalness={TEXT_CONFIG.MATERIAL.METALNESS} 
+            roughness={TEXT_CONFIG.MATERIAL.ROUGHNESS} 
+          />
         </Text3D>
       </Center>
     </group>
   );
 }
 
+/**
+ * Props for the Letter3DContainer component
+ */
 interface Letter3DContainerProps {
   className?: string;
   size?: number;
 }
 
-export default function Letter3DContainer({ className = '', size = 4 }: Letter3DContainerProps) {
+/**
+ * Letter3DContainer component that creates a 3D scene with spinning text
+ * using Three.js and React Three Fiber
+ */
+export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.DEFAULT_SIZE }: Letter3DContainerProps) {
   const text = "NN";
   const fontIndex = 1; // optimer
   const weightIndex = 1; // bold
-  const color = "#ffffff"; // pure white
+  const color = "#ffffff";
   const bevel = true;
 
-  const currentFont = fonts[fontIndex];
+  const currentFont = FONTS[fontIndex];
   const currentWeight = currentFont.weights[weightIndex];
   const fontPath = getFontPath(currentFont.name, currentWeight);
 
   return (
     <div className={className} style={{ position: 'relative' }}>
-      <Canvas camera={{ position: [0, 10, 18], fov: 30 }}>
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[0, 10, 10]} intensity={1.2} />
-        <directionalLight position={[0, -10, -10]} intensity={1.2} />
-        <pointLight position={[10, 10, 10]} intensity={0.9} />
-        <pointLight position={[-10, -10, -10]} intensity={0.9} />
-        <SpinningNN fontPath={fontPath} color={color} bevel={bevel} text={text} size={size} />
+      <Canvas camera={{ position: TEXT_CONFIG.CAMERA.POSITION, fov: TEXT_CONFIG.CAMERA.FOV }}>
+        <ambientLight intensity={TEXT_CONFIG.LIGHTS.AMBIENT.INTENSITY} />
+        <directionalLight position={[0, 10, 10]} intensity={TEXT_CONFIG.LIGHTS.DIRECTIONAL.INTENSITY} />
+        <directionalLight position={[0, -10, -10]} intensity={TEXT_CONFIG.LIGHTS.DIRECTIONAL.INTENSITY} />
+        <pointLight position={[10, 10, 10]} intensity={TEXT_CONFIG.LIGHTS.POINT.INTENSITY} />
+        <pointLight position={[-10, -10, -10]} intensity={TEXT_CONFIG.LIGHTS.POINT.INTENSITY} />
+        <SpinningNN 
+          fontPath={fontPath} 
+          color={color} 
+          bevel={bevel} 
+          text={text} 
+          size={size} 
+        />
         <OrbitControls
           target={[0, 0, 0]}
           enablePan={false}

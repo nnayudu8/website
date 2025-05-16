@@ -1,21 +1,44 @@
 import { NextResponse } from 'next/server';
 
-// Spotify API endpoints
-const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
-const NOW_PLAYING_ENDPOINT = 'https://api.spotify.com/v1/me/player/currently-playing';
+/**
+ * Spotify API configuration
+ */
+const SPOTIFY_CONFIG = {
+  ENDPOINTS: {
+    TOKEN: 'https://accounts.spotify.com/api/token',
+    NOW_PLAYING: 'https://api.spotify.com/v1/me/player/currently-playing'
+  },
+  RETRY: {
+    MAX_ATTEMPTS: 3,
+    BACKOFF_BASE: 1000 // Base delay in milliseconds
+  }
+} as const;
 
-// Create the Basic Auth header for Spotify API using client ID and secret
+/**
+ * Create the Basic Auth header for Spotify API using client ID and secret
+ */
 const basic = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString('base64');
 
-// Function to get a fresh access token using the refresh token
-async function getAccessToken() {
-  const maxRetries = 3;
+/**
+ * Interface for the Spotify access token response
+ */
+interface AccessTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+/**
+ * Gets a fresh access token using the refresh token
+ * Implements exponential backoff retry logic
+ */
+async function getAccessToken(): Promise<AccessTokenResponse> {
+  const { MAX_ATTEMPTS, BACKOFF_BASE } = SPOTIFY_CONFIG.RETRY;
   let retryCount = 0;
 
-  while (retryCount < maxRetries) {
+  while (retryCount < MAX_ATTEMPTS) {
     try {
-      // Request a new access token from Spotify
-      const response = await fetch(TOKEN_ENDPOINT, {
+      const response = await fetch(SPOTIFY_CONFIG.ENDPOINTS.TOKEN, {
         method: 'POST',
         headers: {
           Authorization: `Basic ${basic}`,
@@ -27,33 +50,33 @@ async function getAccessToken() {
         }),
       });
 
-      // Throw error if response is not OK
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Return the access token JSON
       return response.json();
     } catch (error) {
       retryCount++;
-      // If max retries reached, log and throw error
-      if (retryCount === maxRetries) {
+      if (retryCount === MAX_ATTEMPTS) {
         console.error('Failed to get access token after retries:', error);
         throw error;
       }
-      // Exponential backoff before retrying
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+      // Exponential backoff: 2^retryCount * baseDelay
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * BACKOFF_BASE));
     }
   }
+  throw new Error('Failed to get access token');
 }
 
-// Helper function to fetch data with retry logic
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
+/**
+ * Helper function to fetch data with retry logic and exponential backoff
+ */
+async function fetchWithRetry(url: string, options: RequestInit): Promise<Response> {
+  const { MAX_ATTEMPTS, BACKOFF_BASE } = SPOTIFY_CONFIG.RETRY;
   let retryCount = 0;
   
-  while (retryCount < maxRetries) {
+  while (retryCount < MAX_ATTEMPTS) {
     try {
-      // Attempt to fetch the resource
       const response = await fetch(url, options);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -61,55 +84,78 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       return response;
     } catch (error) {
       retryCount++;
-      // If max retries reached, throw error
-      if (retryCount === maxRetries) {
+      if (retryCount === MAX_ATTEMPTS) {
         throw error;
       }
-      // Exponential backoff before retrying
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * BACKOFF_BASE));
     }
   }
+  throw new Error('Failed to fetch data');
 }
 
-// Main API route handler for GET requests
+/**
+ * Interface for the Spotify track data
+ */
+interface SpotifyTrack {
+  is_playing: boolean;
+  item: {
+    name: string;
+    artists: Array<{ name: string }>;
+    album: {
+      name: string;
+      images: Array<{ url: string }>;
+    };
+    external_urls: {
+      spotify: string;
+    };
+    duration_ms: number;
+  };
+  progress_ms: number;
+}
+
+/**
+ * Main API route handler for GET requests
+ * Returns the currently playing song data from Spotify
+ */
 export async function GET() {
   try {
-    // Get a fresh access token
     const { access_token } = await getAccessToken();
 
-    // Fetch the currently playing song from Spotify
-    const response = await fetchWithRetry(NOW_PLAYING_ENDPOINT, {
+    const response = await fetchWithRetry(SPOTIFY_CONFIG.ENDPOINTS.NOW_PLAYING, {
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
       cache: 'no-store',
     });
 
-    // If no response, or no song is playing, or error status, return isPlaying: false
     if (!response || response.status === 204 || response.status > 400) {
       return NextResponse.json({ isPlaying: false });
     }
 
-    // Parse the song data from the response
-    const song = await response.json();
-    const isPlaying = song.is_playing;
-    const title = song.item.name;
-    const artist = song.item.artists.map((_artist: { name: string }) => _artist.name).join(', ');
-    const album = song.item.album.name;
-    const albumArtUrl = song.item.album.images[0].url;
-    const songUrl = song.item.external_urls.spotify;
+    const song = await response.json() as SpotifyTrack;
+    const {
+      is_playing: isPlaying,
+      item: {
+        name: title,
+        artists,
+        album: { name: album, images },
+        external_urls: { spotify: songUrl },
+        duration_ms: duration
+      },
+      progress_ms: progress
+    } = song;
 
-    // Return the song data as JSON
     return NextResponse.json({
       album,
-      albumArtUrl,
-      artist,
+      albumArtUrl: images[0].url,
+      artist: artists.map(artist => artist.name).join(', '),
       isPlaying,
       songUrl,
       title,
+      progress,
+      duration,
     });
   } catch (error) {
-    // Log and return isPlaying: false on error
     console.error('Error fetching Spotify data:', error);
     return NextResponse.json({ isPlaying: false });
   }

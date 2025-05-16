@@ -1,7 +1,11 @@
+/* Import required stylesheets */
 @import "tailwindcss";
 @import "@fontsource/roboto"; /* default weight 400 */
 @import "@fontsource/roboto/700.css"; /* for bold */
 
+/**
+ * CSS Custom Properties (variables) for theming
+ */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -14,7 +18,10 @@
   --font-mono: var(--font-geist-mono);
 } */
 
-
+/**
+ * Base styles for the body element
+ * Creates an animated gradient background effect
+ */
 body {
   background:
     linear-gradient(0deg, #7a7a7a12, #7a7a7a42, #00000073, #7a7a7a42, #7a7a7a12),
@@ -23,6 +30,10 @@ body {
   animation: gradientMove 15s ease infinite;
 }
 
+/**
+ * Keyframes for the gradient animation
+ * Creates a smooth flowing effect by moving the gradient position
+ */
 @keyframes gradientMove {
   0% {
     background-position: 0% 50%;

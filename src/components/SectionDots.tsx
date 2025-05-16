@@ -2,36 +2,59 @@
 
 import { useEffect, useState } from 'react';
 
+/**
+ * Available sections in the navigation
+ */
 const sections = [
   { id: 'home', label: 'Home' },
   { id: 'music', label: 'Music' },
 ];
 
+/**
+ * Props for the SectionDots component
+ */
 interface SectionDotsProps {
   sectionRefs: React.RefObject<HTMLDivElement>[];
 }
 
+/**
+ * Constants for the intersection observer
+ */
+const OBSERVER_OPTIONS = {
+  root: null,
+  rootMargin: '-45% 0px',
+  threshold: 0.1
+};
+
+/**
+ * SectionDots component that displays navigation dots for different sections
+ * with an animated 'N' indicator showing the current section
+ */
 export default function SectionDots({ sectionRefs }: SectionDotsProps) {
   const [active, setActive] = useState(0);
 
+  /**
+   * Set up intersection observer to track which section is currently in view
+   */
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: '-45% 0px',
-      threshold: 0
-    };
-
     const observer = new window.IntersectionObserver((entries) => {
+      let maxRatio = 0;
+      let maxIdx = -1;
+
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sectionIdx = sectionRefs.findIndex(ref => ref.current === entry.target);
-          if (sectionIdx !== -1) {
-            setActive(sectionIdx);
-          }
+        const sectionIdx = sectionRefs.findIndex(ref => ref.current === entry.target);
+        if (sectionIdx !== -1 && entry.intersectionRatio > maxRatio) {
+          maxRatio = entry.intersectionRatio;
+          maxIdx = sectionIdx;
         }
       });
-    }, observerOptions);
 
+      if (maxIdx !== -1) {
+        setActive(maxIdx);
+      }
+    }, OBSERVER_OPTIONS);
+
+    // Observe all section refs
     sectionRefs.forEach(ref => {
       if (ref.current) {
         observer.observe(ref.current);
@@ -41,6 +64,9 @@ export default function SectionDots({ sectionRefs }: SectionDotsProps) {
     return () => observer.disconnect();
   }, [sectionRefs]);
 
+  /**
+   * Handle click on a navigation dot to scroll to the corresponding section
+   */
   const handleDotClick = (idx: number) => {
     const el = sectionRefs[idx]?.current;
     if (el) {
