@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { NodeMeshHandle } from './NodeMesh';
 
 /**
  * List of technical skills to be displayed in the typing animation
@@ -28,43 +29,94 @@ interface SkillPopup {
 }
 
 /**
- * Constants defining the safe zones where popups should not appear
- * These zones are relative to the window dimensions
- */
-const OUTER_MARGIN = 0.10; // 10% margin from each edge
-const CENTER_WIDTH = 0.60; // 60% of width (centered)
-const CENTER_HEIGHT = 0.32; // 32% of height (centered)
-
-/**
- * Determines if a given position is in a safe zone where popups should not appear
- * Safe zones include the outer margins and the center area
+ * Check if a position is in a safe zone by checking if it overlaps with specific UI elements
+ * or is too close to screen edges
  */
 function isInSafeZone(x: number, y: number): boolean {
-  if (typeof window === 'undefined') return true;
-  
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const px = x / w;
-  const py = y / h;
+  // Check screen edge boundaries first using percentages
+  const EDGE_BUFFER_PERCENT = 0.08; // 8% from each edge
+  const minX = window.innerWidth * EDGE_BUFFER_PERCENT;
+  const maxX = window.innerWidth * (1 - EDGE_BUFFER_PERCENT);
+  const minY = window.innerHeight * EDGE_BUFFER_PERCENT;
+  const maxY = window.innerHeight * (1 - EDGE_BUFFER_PERCENT);
 
-  // Check outer margins
-  if (px < OUTER_MARGIN || px > 1 - OUTER_MARGIN || 
-      py < OUTER_MARGIN || py > 1 - OUTER_MARGIN) {
+  if (
+    x < minX ||
+    x > maxX ||
+    y < minY ||
+    y > maxY
+  ) {
     return true;
   }
 
-  // Check center area
-  const centerLeft = 0.5 - CENTER_WIDTH / 2;
-  const centerRight = 0.5 + CENTER_WIDTH / 2;
-  const centerTop = 0.5 - CENTER_HEIGHT / 2;
-  const centerBottom = 0.5 + CENTER_HEIGHT / 2;
+  // Get only the specific elements we want to protect
+  const elements = document.querySelectorAll(`
+    .fixed.top-2.left-2,  /* NN logo */
+    .section-dots-container,  /* Nav dots */
+    #home .text-6xl,  /* Your name */
+    #home .text-xl,   /* Software Engineer | Energy Shifter text */
+    #home .flex.items-center.gap-8,  /* Social icons container */
+    .spotify-embed    /* Spotify player */
+  `);
+  
+  // Check if the position overlaps with any element
+  return Array.from(elements).some(element => {
+    const rect = element.getBoundingClientRect();
+    // Add a larger buffer (20px) around elements to prevent edge cases
+    const buffer = 20;
+    return (
+      x >= rect.left - buffer &&
+      x <= rect.right + buffer &&
+      y >= rect.top - buffer &&
+      y <= rect.bottom + buffer
+    );
+  });
+}
 
-  return px > centerLeft && px < centerRight && 
-         py > centerTop && py < centerBottom;
+/**
+ * Gets a random position that doesn't overlap with any UI elements
+ */
+function getRandomAllowedPosition() {
+  if (typeof window === 'undefined') return { x: 0, y: 0 };
+  
+  let tries = 0;
+  const maxTries = 50;
+  
+  while (tries < maxTries) {
+    const x = Math.random() * window.innerWidth;
+    const y = Math.random() * window.innerHeight;
+    
+    if (!isInSafeZone(x, y)) {
+      return { x, y };
+    }
+    tries++;
+  }
+  
+  // If we can't find a valid position, try the corners
+  const corners = [
+    { x: 50, y: 50 },
+    { x: window.innerWidth - 50, y: 50 },
+    { x: 50, y: window.innerHeight - 50 },
+    { x: window.innerWidth - 50, y: window.innerHeight - 50 }
+  ];
+  
+  for (const corner of corners) {
+    if (!isInSafeZone(corner.x, corner.y)) {
+      return corner;
+    }
+  }
+  
+  // Last resort: center of screen
+  return { 
+    x: window.innerWidth * 0.5, 
+    y: window.innerHeight * 0.5 
+  };
 }
 
 interface SkillTyperProps {
   active: boolean;
+  nodeMeshRef: React.RefObject<NodeMeshHandle>;
+  onPositionChange?: (x: number, y: number) => void;
 }
 
 /**
@@ -72,7 +124,7 @@ interface SkillTyperProps {
  * for displaying technical skills. Skills can appear either automatically
  * or when the user clicks on the screen.
  */
-const SkillTyper: React.FC<SkillTyperProps> = ({ active }) => {
+const SkillTyper: React.FC<SkillTyperProps> = ({ active, nodeMeshRef, onPositionChange }) => {
   const [popups, setPopups] = useState<SkillPopup[]>([]);
   const nextIdRef = useRef(0);
   const lastSkillIndexRef = useRef(-1);
@@ -114,6 +166,12 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active }) => {
     const visibleSkills = popups.map(p => p.text);
     const skill = getNextSkill(visibleSkills);
     const id = nextIdRef.current++;
+
+    // Trigger a pulse in the neural network with position
+    if (nodeMeshRef.current) {
+      onPositionChange?.(x, y);
+      nodeMeshRef.current.triggerPulse();
+    }
 
     const newPopup: SkillPopup = {
       id,
@@ -157,7 +215,7 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active }) => {
         }, 2000);
       }
     }, 100);
-  }, [popups]);
+  }, [popups, nodeMeshRef, onPositionChange]);
 
   /**
    * Handles automatic skill popup generation
@@ -167,22 +225,6 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active }) => {
     if (!active) return;
     let isUnmounted = false;
     const autoTimers: NodeJS.Timeout[] = [];
-
-    function getRandomAllowedPosition() {
-      if (typeof window === 'undefined') return { x: 0, y: 0 };
-      let tries = 0;
-      while (tries < 50) {
-        const x = Math.random() * window.innerWidth;
-        const y = Math.random() * window.innerHeight;
-        if (!isInSafeZone(x, y)) return { x, y };
-        tries++;
-      }
-      // Fallback position if no valid position found
-      return { 
-        x: window.innerWidth * 0.5, 
-        y: window.innerHeight * (OUTER_MARGIN + 0.05) 
-      };
-    }
 
     function scheduleAutoSkill() {
       if (isUnmounted) return;

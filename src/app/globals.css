@@ -3,13 +3,12 @@
 @import "@fontsource/roboto"; /* default weight 400 */
 @import "@fontsource/roboto/700.css"; /* for bold */
 
-/**
- * CSS Custom Properties (variables) for theming
- */
+/*
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
+*/
 
 /* @theme inline {
   --color-background: var(--background);

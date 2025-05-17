@@ -6,7 +6,7 @@ import SectionDots from '@/components/SectionDots';
 import PersistentLogo from '@/components/PersistentLogo';
 import { FaGithub, FaLinkedin, FaEnvelope, FaFileAlt } from 'react-icons/fa';
 import { IconBaseProps } from 'react-icons';
-import IsometricGrid from '@/components/IsometricGrid';
+import NodeMesh, { NodeMeshHandle } from '@/components/NodeMesh';
 import FocusBubble from '@/components/FocusBubble';
 import SkillTyper from '@/components/SkillTyper';
 
@@ -44,11 +44,6 @@ const SOCIAL_LINKS = [
  * Constants for animations and styling
  */
 const ANIMATION_STYLES = {
-  BOUNCE: {
-    DURATION: '0.5s',
-    DELAY: 0.05,
-    DISTANCE: '-0.5em'
-  },
   PULSE: {
     DURATION: '2s',
     SCALE: {
@@ -67,32 +62,19 @@ const ANIMATION_STYLES = {
  */
 interface BouncingTextProps {
   text: string;
-  className: string;
+  className?: string;
 }
 
 /**
  * BouncingText component that creates a text animation where letters
  * bounce up when hovered or animated
  */
-function BouncingText({ text, className }: BouncingTextProps) {
+function BouncingText({ text, className = '' }: BouncingTextProps) {
   return (
     <div className={`group ${className}`}>
       <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(${ANIMATION_STYLES.BOUNCE.DISTANCE}); }
-        }
         .bounce-letter {
           display: inline-block;
-          animation: none;
-        }
-        .group:hover .bounce-letter {
-          animation: bounce ${ANIMATION_STYLES.BOUNCE.DURATION} ease-in-out;
-          animation-fill-mode: forwards;
-        }
-        .bounce-letter.animating {
-          animation: bounce ${ANIMATION_STYLES.BOUNCE.DURATION} ease-in-out;
-          animation-fill-mode: forwards;
         }
       `}</style>
       {text.split('').map((letter, index) => (
@@ -100,14 +82,7 @@ function BouncingText({ text, className }: BouncingTextProps) {
           key={index}
           className="bounce-letter inline-block"
           style={{ 
-            animationDelay: `${index * ANIMATION_STYLES.BOUNCE.DELAY}s`,
             marginRight: letter === ' ' ? '0.25em' : '0'
-          }}
-          onAnimationStart={(e) => {
-            e.currentTarget.classList.add('animating');
-          }}
-          onAnimationEnd={(e) => {
-            e.currentTarget.classList.remove('animating');
           }}
         >
           {letter}
@@ -124,7 +99,9 @@ function BouncingText({ text, className }: BouncingTextProps) {
 export default function Home() {
   const homeRef = useRef<HTMLDivElement>(null!);
   const musicRef = useRef<HTMLDivElement>(null!);
+  const nodeMeshRef = useRef<NodeMeshHandle>(null!);
   const [homeActive, setHomeActive] = useState(true);
+  const [skillPosition, setSkillPosition] = useState<{ x: number; y: number } | undefined>(undefined);
 
   /**
    * Set up intersection observer to track when home section is in view
@@ -141,8 +118,12 @@ export default function Home() {
 
   return (
     <main className="relative h-screen overflow-y-scroll sm:snap-y sm:snap-mandatory overflow-x-hidden text-white scroll-smooth bg-gradient-to-b from-gray-900 to-black">
-      <IsometricGrid />
-      <SkillTyper active={homeActive} />
+      <NodeMesh ref={nodeMeshRef} position={skillPosition} />
+      <SkillTyper 
+        active={homeActive} 
+        nodeMeshRef={nodeMeshRef} 
+        onPositionChange={(x, y) => setSkillPosition({ x, y })}
+      />
       <FocusBubble />
       <div className="relative z-10">
         <SectionDots sectionRefs={[homeRef, musicRef]} />
