@@ -1,3 +1,13 @@
+/**
+ * Letter3DContainer Component
+ * Creates a 3D animated text container using Three.js
+ * Features:
+ * - 3D text rendering with custom fonts
+ * - Continuous rotation animation
+ * - Customizable size and styling
+ * - Interactive orbit controls
+ */
+
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Center, Text3D, OrbitControls } from '@react-three/drei';
@@ -5,6 +15,7 @@ import * as THREE from 'three';
 
 /**
  * Available fonts and their weights for the 3D text
+ * Each font has a name and available weights
  */
 const FONTS = [
   { name: 'helvetiker', weights: ['regular', 'bold'] },
@@ -16,6 +27,7 @@ const FONTS = [
 
 /**
  * Constants for the 3D text configuration
+ * Defines default values for size, rotation, bevel, materials, and lighting
  */
 const TEXT_CONFIG = {
   DEFAULT_SIZE: 4,
@@ -42,6 +54,9 @@ const TEXT_CONFIG = {
 
 /**
  * Helper to get the correct font file path based on font name and weight
+ * @param font - Name of the font
+ * @param weight - Weight of the font
+ * @returns Path to the font file
  */
 function getFontPath(font: string, weight: string): string {
   if (font.startsWith('droid')) {
@@ -52,6 +67,11 @@ function getFontPath(font: string, weight: string): string {
 
 /**
  * Props for the SpinningNN component
+ * @property fontPath - Path to the font file
+ * @property color - Color of the 3D text
+ * @property bevel - Whether to apply bevel effect
+ * @property text - Text to display
+ * @property size - Size of the text
  */
 interface SpinningNNProps {
   fontPath: string;
@@ -63,11 +83,13 @@ interface SpinningNNProps {
 
 /**
  * SpinningNN component that renders a 3D text with continuous rotation
+ * Uses Three.js for 3D rendering and animation
  */
 function SpinningNN({ fontPath, color, bevel, text, size = TEXT_CONFIG.DEFAULT_SIZE }: SpinningNNProps) {
   const groupRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
 
+  // Update rotation on each frame
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.rotation.y += TEXT_CONFIG.ROTATION_SPEED;
@@ -102,6 +124,8 @@ function SpinningNN({ fontPath, color, bevel, text, size = TEXT_CONFIG.DEFAULT_S
 
 /**
  * Props for the Letter3DContainer component
+ * @property className - Additional CSS classes
+ * @property size - Size of the 3D text
  */
 interface Letter3DContainerProps {
   className?: string;
@@ -113,12 +137,14 @@ interface Letter3DContainerProps {
  * using Three.js and React Three Fiber
  */
 export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.DEFAULT_SIZE }: Letter3DContainerProps) {
+  // Configuration for the 3D text
   const text = "NN";
   const fontIndex = 1; // optimer
   const weightIndex = 1; // bold
   const color = "#ffffff";
   const bevel = true;
 
+  // Get the font path based on selected font and weight
   const currentFont = FONTS[fontIndex];
   const currentWeight = currentFont.weights[weightIndex];
   const fontPath = getFontPath(currentFont.name, currentWeight);
@@ -126,11 +152,18 @@ export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.D
   return (
     <div className={className} style={{ position: 'relative' }}>
       <Canvas camera={{ position: TEXT_CONFIG.CAMERA.POSITION, fov: TEXT_CONFIG.CAMERA.FOV }}>
+        {/* Ambient light for overall scene illumination */}
         <ambientLight intensity={TEXT_CONFIG.LIGHTS.AMBIENT.INTENSITY} />
+        
+        {/* Directional lights for depth and shadows */}
         <directionalLight position={[0, 10, 10]} intensity={TEXT_CONFIG.LIGHTS.DIRECTIONAL.INTENSITY} />
         <directionalLight position={[0, -10, -10]} intensity={TEXT_CONFIG.LIGHTS.DIRECTIONAL.INTENSITY} />
+        
+        {/* Point lights for additional highlights */}
         <pointLight position={[10, 10, 10]} intensity={TEXT_CONFIG.LIGHTS.POINT.INTENSITY} />
         <pointLight position={[-10, -10, -10]} intensity={TEXT_CONFIG.LIGHTS.POINT.INTENSITY} />
+        
+        {/* Main 3D text component */}
         <SpinningNN 
           fontPath={fontPath} 
           color={color} 
@@ -138,6 +171,8 @@ export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.D
           text={text} 
           size={size} 
         />
+        
+        {/* Orbit controls for interactive viewing */}
         <OrbitControls
           target={[0, 0, 0]}
           enablePan={false}

@@ -1,3 +1,14 @@
+/**
+ * NowPlaying Component
+ * Displays the current Spotify track with animated equalizer and scrolling text
+ * Features:
+ * - Real-time Spotify integration
+ * - Animated equalizer bars
+ * - Smooth text scrolling
+ * - Progress bar
+ * - Responsive design
+ */
+
 'use client';
 
 import React from 'react';
@@ -9,6 +20,14 @@ const SpotifyIcon = FaSpotify as React.FC<IconBaseProps>;
 
 /**
  * Interface for the Spotify now playing data
+ * @property isPlaying - Whether a track is currently playing
+ * @property title - Title of the current track
+ * @property artist - Artist of the current track
+ * @property album - Album name
+ * @property albumArtUrl - URL to the album art
+ * @property songUrl - URL to the track on Spotify
+ * @property progress - Current playback progress in milliseconds
+ * @property duration - Total duration of the track in milliseconds
  */
 interface NowPlayingData {
   isPlaying: boolean;
@@ -23,6 +42,7 @@ interface NowPlayingData {
 
 /**
  * Constants for animation and timing
+ * Defines durations, intervals, and delays for various animations
  */
 const SCROLL_DURATION = '4s';
 const RESET_DURATION = '0.6s';
@@ -50,7 +70,7 @@ export default function NowPlaying() {
   const [isIdle, setIsIdle] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
-  // Refs
+  // Refs for DOM elements
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
 
@@ -194,7 +214,10 @@ export default function NowPlaying() {
   const handleClick = () => {
     if (isMobile && !isScrollingLeft && !isScrollingRight && !isMobileAnimating) {
       setIsMobileAnimating(true);
-      startScrollLeft();
+      calculateScrollDistance();
+      setTransitionDuration(SCROLL_DURATION);
+      setIsScrollingRight(false);
+      setIsScrollingLeft(true);
     }
   };
 
@@ -227,6 +250,7 @@ export default function NowPlaying() {
 
   /**
    * Equalizer bars component with animated bars
+   * Creates a visual representation of music playback
    */
   const Bars = () => (
     <div className="flex items-end gap-[3px] h-6 w-8 mr-4">
@@ -238,14 +262,14 @@ export default function NowPlaying() {
         />
       ))}
       <style>{`
-        @keyframes eq-bar1 { 0%, 100% { height: 30%; } 50% { height: 100%; } }
-        @keyframes eq-bar2 { 0%, 100% { height: 60%; } 50% { height: 80%; } }
-        @keyframes eq-bar3 { 0%, 100% { height: 80%; } 50% { height: 40%; } }
-        @keyframes eq-bar4 { 0%, 100% { height: 50%; } 50% { height: 90%; } }
-        .animate-eq-bar1 { animation: eq-bar1 1s infinite; }
-        .animate-eq-bar2 { animation: eq-bar2 1.2s infinite; }
-        .animate-eq-bar3 { animation: eq-bar3 0.9s infinite; }
-        .animate-eq-bar4 { animation: eq-bar4 1.1s infinite; }
+        @keyframes eq-bar1 { 0%, 100% { height: 35%; } 50% { height: 95%; } }
+        @keyframes eq-bar2 { 0%, 100% { height: 55%; } 50% { height: 75%; } }
+        @keyframes eq-bar3 { 0%, 100% { height: 75%; } 50% { height: 35%; } }
+        @keyframes eq-bar4 { 0%, 100% { height: 45%; } 50% { height: 85%; } }
+        .animate-eq-bar1 { animation: eq-bar1 1.1s infinite; }
+        .animate-eq-bar2 { animation: eq-bar2 1.3s infinite; }
+        .animate-eq-bar3 { animation: eq-bar3 1s infinite; }
+        .animate-eq-bar4 { animation: eq-bar4 1.2s infinite; }
       `}</style>
     </div>
   );
@@ -266,15 +290,22 @@ export default function NowPlaying() {
         position: 'relative',
       }}
     >
+      {/* Animated equalizer bars */}
       <Bars />
+      
+      {/* Track information container */}
       <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 min-w-0">
+          {/* Scrolling title container */}
           <div
             ref={containerRef}
-            className="relative overflow-hidden max-w-[180px] min-w-0"
+            className="relative overflow-hidden max-w-[180px] min-w-0 cursor-pointer"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
+            role="button"
+            tabIndex={0}
+            onTouchStart={handleClick}
           >
             <span
               ref={textRef}
@@ -289,17 +320,23 @@ export default function NowPlaying() {
               {data.isPlaying ? data.title : 'Not playing'}
             </span>
           </div>
+          
+          {/* Artist name */}
           {data.isPlaying && (
             <span className="text-emerald-100 text-xs font-medium truncate min-w-0">
               {data.artist}
             </span>
           )}
         </div>
+        
+        {/* Album name */}
         {data.isPlaying && (
           <div className="text-xs text-gray-200 truncate min-w-0">
             {data.album}
           </div>
         )}
+        
+        {/* Progress bar */}
         {data.isPlaying && (
           <div className="w-full h-1 bg-white/20 rounded mt-2">
             <div
@@ -309,6 +346,8 @@ export default function NowPlaying() {
           </div>
         )}
       </div>
+      
+      {/* Spotify icon with idle animation */}
       <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <SpotifyIcon
           className={`text-white/80 text-2xl ml-2 drop-shadow ${isIdle ? 'spotify-pulse' : ''}`}

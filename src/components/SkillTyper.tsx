@@ -1,22 +1,27 @@
+/**
+ * SkillTyper Component
+ * Creates an interactive typing animation effect for displaying technical skills
+ * Features:
+ * - Automatic skill popups with random timing
+ * - Click-to-spawn skill popups
+ * - Typing animation effect
+ * - Fade in/out transitions
+ * - Neural network interaction
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { NodeMeshHandle } from './NodeMesh';
-
-/**
- * List of technical skills to be displayed in the typing animation
- */
-const skills = [
-  "TypeScript",
-  "React",
-  "Node.js",
-  "Python",
-  "AWS",
-  "Docker",
-  "GraphQL",
-  "MongoDB"
-];
+import { ALL_SKILLS } from '@/config/skills';
 
 /**
  * Interface for a skill popup that appears on the screen
+ * @property id - Unique identifier for the popup
+ * @property text - The full skill text to be displayed
+ * @property x - X coordinate position
+ * @property y - Y coordinate position
+ * @property opacity - Current opacity for fade effects
+ * @property displayText - Currently displayed text (for typing animation)
+ * @property auto - Whether this popup was spawned automatically
  */
 interface SkillPopup {
   id: number;
@@ -29,8 +34,24 @@ interface SkillPopup {
 }
 
 /**
- * Check if a position is in a safe zone by checking if it overlaps with specific UI elements
- * or is too close to screen edges
+ * Shuffles an array using the Fisher-Yates algorithm
+ * @param array - The array to shuffle
+ * @returns A new array with randomly shuffled elements
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Checks if a position is in a safe zone (too close to UI elements or screen edges)
+ * @param x - X coordinate to check
+ * @param y - Y coordinate to check
+ * @returns true if the position is in a safe zone, false otherwise
  */
 function isInSafeZone(x: number, y: number): boolean {
   // Check screen edge boundaries first using percentages
@@ -50,14 +71,15 @@ function isInSafeZone(x: number, y: number): boolean {
   }
 
   // Get only the specific elements we want to protect
-  const elements = document.querySelectorAll(`
-    .fixed.top-2.left-2,  /* NN logo */
-    .section-dots-container,  /* Nav dots */
-    #home .text-6xl,  /* Your name */
-    #home .text-xl,   /* Software Engineer | Energy Shifter text */
-    #home .flex.items-center.gap-8,  /* Social icons container */
-    .spotify-embed    /* Spotify player */
-  `);
+  const elements = document.querySelectorAll(
+    '.fixed.top-2.left-2,' +
+    '.section-dots-container,' +
+    '.main-name,' +
+    '.main-title,' +
+    '#home .flex.items-center.gap-8,' +
+    '.spotify-embed,' +
+    '.flex.items-center.gap-4.px-4.py-3.rounded-full' // Spotify player
+  );
   
   // Check if the position overlaps with any element
   return Array.from(elements).some(element => {
@@ -75,9 +97,16 @@ function isInSafeZone(x: number, y: number): boolean {
 
 /**
  * Gets a random position that doesn't overlap with any UI elements
+ * @returns An object with x and y coordinates, or null if no valid position found
  */
 function getRandomAllowedPosition() {
   if (typeof window === 'undefined') return { x: 0, y: 0 };
+  
+  // Check if we're within the first page's content
+  const homeSection = document.getElementById('home');
+  if (!homeSection) return null;
+  const homeBottom = homeSection.getBoundingClientRect().bottom;
+  if (homeBottom < 0) return null;
   
   let tries = 0;
   const maxTries = 50;
@@ -113,6 +142,12 @@ function getRandomAllowedPosition() {
   };
 }
 
+/**
+ * Props for the SkillTyper component
+ * @property active - Whether the component should be active
+ * @property nodeMeshRef - Reference to the NodeMesh component for interaction
+ * @property onPositionChange - Callback for when skill position changes
+ */
 interface SkillTyperProps {
   active: boolean;
   nodeMeshRef: React.RefObject<NodeMeshHandle>;
@@ -125,49 +160,57 @@ interface SkillTyperProps {
  * or when the user clicks on the screen.
  */
 const SkillTyper: React.FC<SkillTyperProps> = ({ active, nodeMeshRef, onPositionChange }) => {
+  // State and refs for managing popups and skill cycling
   const [popups, setPopups] = useState<SkillPopup[]>([]);
   const nextIdRef = useRef(0);
-  const lastSkillIndexRef = useRef(-1);
+  const shuffledSkillsRef = useRef<string[]>([]);
+  const currentSkillIndexRef = useRef(0);
 
-  // Clear all popups when component becomes inactive
+  /**
+   * Initialize shuffled skills when component mounts or becomes active
+   */
+  useEffect(() => {
+    if (active) {
+      shuffledSkillsRef.current = shuffleArray(ALL_SKILLS);
+      currentSkillIndexRef.current = 0;
+    }
+  }, [active]);
+
+  /**
+   * Clear all popups when component becomes inactive
+   */
   useEffect(() => {
     if (!active) setPopups([]);
   }, [active]);
 
   /**
-   * Gets the next skill to display, ensuring we cycle through all skills
-   * before repeating and avoiding duplicates
+   * Gets the next skill to display, cycling through the shuffled array
+   * @returns The next skill text to display
    */
-  function getNextSkill(visibleSkills: string[]): string {
-    let idx = lastSkillIndexRef.current;
-    for (let i = 0; i < skills.length; i++) {
-      idx = (idx + 1) % skills.length;
-      if (!visibleSkills.includes(skills[idx])) {
-        lastSkillIndexRef.current = idx;
-        return skills[idx];
-      }
-    }
-    // Fallback: pick next skill in sequence
-    lastSkillIndexRef.current = (lastSkillIndexRef.current + 1) % skills.length;
-    return skills[lastSkillIndexRef.current];
+  function getNextSkill(): string {
+    const skill = shuffledSkillsRef.current[currentSkillIndexRef.current];
+    currentSkillIndexRef.current = (currentSkillIndexRef.current + 1) % shuffledSkillsRef.current.length;
+    return skill;
   }
 
   /**
    * Creates a new skill popup at the specified position
    * Handles the typing animation and fade-out effect
+   * @param x - X coordinate for the popup
+   * @param y - Y coordinate for the popup
+   * @param auto - Whether this popup was spawned automatically
    */
   const spawnSkill = useCallback((x: number, y: number, auto = false) => {
     // Enforce limits on number of popups
     const autoCount = popups.filter(p => p.auto).length;
     if (auto && autoCount >= 2) return;
-    if (popups.length >= 4) return;
+    if (popups.length >= 5) return;
     if (isInSafeZone(x, y)) return;
 
-    const visibleSkills = popups.map(p => p.text);
-    const skill = getNextSkill(visibleSkills);
+    const skill = getNextSkill();
     const id = nextIdRef.current++;
 
-    // Trigger a pulse in the neural network with position
+    // Trigger a pulse in the neural network with position immediately
     if (nodeMeshRef.current) {
       onPositionChange?.(x, y);
       nodeMeshRef.current.triggerPulse();
@@ -228,10 +271,19 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active, nodeMeshRef, onPosition
 
     function scheduleAutoSkill() {
       if (isUnmounted) return;
+      
+      // Check if we're within the first page's content
+      const homeSection = document.getElementById('home');
+      if (!homeSection) return;
+      const homeBottom = homeSection.getBoundingClientRect().bottom;
+      if (homeBottom < 0) return;
+
       const autoCount = popups.filter(p => p.auto).length;
-      if (autoCount < 2 && popups.length < 4) {
-        const { x, y } = getRandomAllowedPosition();
-        spawnSkill(x, y, true);
+      if (autoCount < 2 && popups.length < 5) {
+        const position = getRandomAllowedPosition();
+        if (position) {
+          spawnSkill(position.x, position.y, true);
+        }
       }
       // Schedule next auto skill with random delay
       const nextDelay = 2000 + Math.random() * 2000;
@@ -259,7 +311,13 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active, nodeMeshRef, onPosition
       if (typeof window === 'undefined') return;
       if (e.button !== 0) return; // Only handle left clicks
       if (!(e.target instanceof HTMLElement)) return;
-      if (popups.length >= 4) return;
+      if (popups.length >= 5) return;
+
+      // Check if we're within the first page's content
+      const homeSection = document.getElementById('home');
+      if (!homeSection) return;
+      const homeBottom = homeSection.getBoundingClientRect().bottom;
+      if (homeBottom < 0) return;
 
       const x = e.clientX;
       const y = e.clientY;
@@ -277,26 +335,30 @@ const SkillTyper: React.FC<SkillTyperProps> = ({ active, nodeMeshRef, onPosition
   return (
     <div className="fixed inset-0 pointer-events-none z-20">
       <style>{`
+        /* Blinking cursor animation */
         @keyframes blink {
           50% { opacity: 0 }
         }
+        /* Skill text styling with responsive font size */
         .skill-text {
           position: fixed;
           transform: translate(-50%, -50%);
           color: rgba(255, 255, 255, 0.9);
-          font-size: 16px;
+          font-size: clamp(0.75rem, min(2vw, 1rem), min(2vw, 1rem));
           font-family: 'Fira Code', monospace;
           text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
           transition: opacity 0.5s ease;
           pointer-events: none;
           z-index: 50;
         }
+        /* Blinking cursor after text */
         .skill-text::after {
           content: '|';
           animation: blink 1s step-end infinite;
           margin-left: 2px;
         }
       `}</style>
+      {/* Render all active skill popups */}
       {popups.map(popup => (
         <div
           key={popup.id}

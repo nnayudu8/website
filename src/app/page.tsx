@@ -1,39 +1,42 @@
+/**
+ * Main page component for the personal website
+ * Implements a responsive layout with interactive elements and animations
+ */
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import SpotifyTop from '@/components/SpotifyTop';
 import SectionDots from '@/components/SectionDots';
 import PersistentLogo from '@/components/PersistentLogo';
-import { FaGithub, FaLinkedin, FaEnvelope, FaFileAlt } from 'react-icons/fa';
+import { FiGithub, FiLinkedin, FiMail, FiFileText } from 'react-icons/fi';
 import { IconBaseProps } from 'react-icons';
 import NodeMesh, { NodeMeshHandle } from '@/components/NodeMesh';
-import FocusBubble from '@/components/FocusBubble';
 import SkillTyper from '@/components/SkillTyper';
 
 /**
- * Social media and contact links configuration
+ * Configuration for social media and contact links
+ * Each link has an icon, title, URL, and hover description
  */
 const SOCIAL_LINKS = [
   {
-    Icon: FaGithub as React.FC<IconBaseProps>,
+    Icon: FiGithub as React.FC<IconBaseProps>,
     title: 'GitHub',
     url: 'https://github.com/nnayudu8',
     description: 'Check out my projects!'
   },
   {
-    Icon: FaLinkedin as React.FC<IconBaseProps>,
+    Icon: FiLinkedin as React.FC<IconBaseProps>,
     title: 'LinkedIn',
     url: 'https://linkedin.com/in/nidhilnayudu/',
     description: 'Connect with me!'
   },
   {
-    Icon: FaEnvelope as React.FC<IconBaseProps>,
+    Icon: FiMail as React.FC<IconBaseProps>,
     title: 'Email',
     url: 'mailto:nnayudu@umich.edu',
     description: 'Let\'s chat!👋'
   },
   {
-    Icon: FaFileAlt as React.FC<IconBaseProps>,
+    Icon: FiFileText as React.FC<IconBaseProps>,
     title: 'Resume',
     url: '/Nidhil_Nayudu_resume.pdf',
     description: 'View experience'
@@ -41,7 +44,8 @@ const SOCIAL_LINKS = [
 ] as const;
 
 /**
- * Constants for animations and styling
+ * Constants for animation and styling configurations
+ * Defines timing, scaling, and visual effects for interactive elements
  */
 const ANIMATION_STYLES = {
   PULSE: {
@@ -58,53 +62,27 @@ const ANIMATION_STYLES = {
 } as const;
 
 /**
- * Props for the BouncingText component
- */
-interface BouncingTextProps {
-  text: string;
-  className?: string;
-}
-
-/**
- * BouncingText component that creates a text animation where letters
- * bounce up when hovered or animated
- */
-function BouncingText({ text, className = '' }: BouncingTextProps) {
-  return (
-    <div className={`group ${className}`}>
-      <style>{`
-        .bounce-letter {
-          display: inline-block;
-        }
-      `}</style>
-      {text.split('').map((letter, index) => (
-        <span
-          key={index}
-          className="bounce-letter inline-block"
-          style={{ 
-            marginRight: letter === ' ' ? '0.25em' : '0'
-          }}
-        >
-          {letter}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Home page component that displays the main content of the website
- * including the hero section and music section
+ * Home page component that serves as the main entry point of the website
+ * Implements a responsive layout with interactive elements and animations
+ * Features:
+ * - Interactive skill typing effect
+ * - Neural network visualization
+ * - Social media links with hover effects
+ * - Smooth scrolling sections
  */
 export default function Home() {
+  // Refs for DOM elements and components
   const homeRef = useRef<HTMLDivElement>(null!);
   const musicRef = useRef<HTMLDivElement>(null!);
   const nodeMeshRef = useRef<NodeMeshHandle>(null!);
+  
+  // State for tracking active sections and skill positions
   const [homeActive, setHomeActive] = useState(true);
   const [skillPosition, setSkillPosition] = useState<{ x: number; y: number } | undefined>(undefined);
 
   /**
-   * Set up intersection observer to track when home section is in view
+   * Sets up an intersection observer to track when the home section is in view
+   * Updates the homeActive state based on visibility
    */
   useEffect(() => {
     if (!homeRef.current) return;
@@ -118,34 +96,43 @@ export default function Home() {
 
   return (
     <main className="relative h-screen overflow-y-scroll sm:snap-y sm:snap-mandatory overflow-x-hidden text-white scroll-smooth bg-gradient-to-b from-gray-900 to-black">
+      {/* Neural network visualization component */}
       <NodeMesh ref={nodeMeshRef} position={skillPosition} />
+      
+      {/* Interactive skill typing effect component */}
       <SkillTyper 
         active={homeActive} 
         nodeMeshRef={nodeMeshRef} 
         onPositionChange={(x, y) => setSkillPosition({ x, y })}
       />
-      <FocusBubble />
+      
       <div className="relative z-10">
+        {/* Navigation dots for section scrolling */}
         <SectionDots sectionRefs={[homeRef, musicRef]} />
+        
+        {/* Persistent logo with home navigation */}
         <PersistentLogo 
           onHomeClick={() => homeRef.current?.scrollIntoView({ behavior: 'smooth' })} 
         />
 
-        {/* Home Section */}
+        {/* Home Section - Main landing area */}
         <section 
           ref={homeRef}
           id="home"
           className="min-h-screen sm:snap-start flex flex-col items-center justify-center px-4 text-center relative"
         >
-          <BouncingText 
-            text="Nidhil Nayudu"
-            className="text-6xl sm:text-7xl md:text-8xl font-extrabold font-roboto drop-shadow-xl text-white"
-          />
-          <BouncingText 
-            text="Software Engineer  |  Energy Shifter"
-            className="text-xl sm:text-2xl mt-6 font-medium text-white/80"
-          />
-          <div className="mt-8 flex items-center gap-8">
+          {/* Main name with responsive font size */}
+          <div className="main-name text-[clamp(1.25rem,min(10vw,7rem),min(10vw,7rem))] font-bold text-gray-200 whitespace-nowrap">
+            Nidhil Nayudu
+          </div>
+          
+          {/* Title with responsive font size */}
+          <div className="main-title text-[clamp(0.625rem,min(3vw,1.75rem),min(3vw,1.75rem))] font-semibold text-gray-300 whitespace-nowrap -mt-2">
+            Software Engineer  |  Energy Shifter
+          </div>
+          
+          {/* Social media links with hover effects */}
+          <div className="mt-3 flex items-center gap-8">
             {SOCIAL_LINKS.map(({ Icon, title, url, description }) => (
               <a
                 key={title}
@@ -155,7 +142,8 @@ export default function Home() {
                 className="group relative transition-all duration-300 text-white/60 hover:text-white hover:scale-110"
               >
                 <div className="relative">
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-6 h-6 text-white drop-shadow" />
+                  {/* Hover animation effect */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
                     <style>{`
                       @keyframes pulse {
@@ -177,10 +165,11 @@ export default function Home() {
                       }
                     `}</style>
                     <div className="pulse absolute inset-0 text-white">
-                      <Icon className="w-6 h-6" />
+                      <Icon className="w-6 h-6 text-white drop-shadow" />
                     </div>
                   </div>
                 </div>
+                {/* Hover tooltip with title and description */}
                 <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 pointer-events-none">
                   <div className="text-white text-sm font-medium">{title}</div>
                   <div className="text-white/60 text-xs mt-1">{description}</div>
@@ -190,23 +179,31 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Music Section */}
+        {/* Music Section - Placeholder for future content */}
         <section
           ref={musicRef}
           id="music"
-          className="min-h-screen sm:snap-start flex flex-col items-center px-4 text-center backdrop-blur-sm pb-24 sm:pb-16 bg-black/0"
+          className="min-h-screen sm:snap-start flex flex-col items-center justify-center px-4 text-center backdrop-blur-sm"
         >
-          <h2 className="text-2xl sm:text-4xl font-medium text-white flex items-center gap-2 mb-6 mt-10 sm:mt-32">
-            <span className="text-2xl">🎧</span>
-            <span className="italic text-white/80">What I&apos;ve been listening to</span>
-          </h2>
-
-          <div className="w-full max-w-4xl">
-            <SpotifyTop />
+          <div className="relative">
+            <div className="absolute bottom-0 left-0 w-full h-[1.25px] bg-emerald-400/70 animate-underline -z-10" />
+            <h2 className="text-4xl sm:text-6xl font-medium text-white/80 relative">
+              Coming Soon
+            </h2>
+            <style>{`
+              @keyframes underline {
+                0%, 100% { transform: scaleX(0); }
+                50% { transform: scaleX(1); }
+              }
+              .animate-underline {
+                animation: underline 2.5s ease-in-out infinite;
+                transform-origin: center;
+              }
+            `}</style>
           </div>
         </section>
 
-        {/* Bottom spacer to ensure content isn't hidden behind floating player */}
+        {/* Bottom spacer to prevent content from being hidden behind floating elements */}
         <div className="h-24" />
       </div>
     </main>

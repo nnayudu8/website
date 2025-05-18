@@ -1,9 +1,20 @@
+/**
+ * SectionDots Component
+ * Creates a navigation menu with animated dots for different sections
+ * Features:
+ * - Visual indicators for current section
+ * - Smooth scrolling navigation
+ * - Animated hover effects
+ * - Responsive design
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
 
 /**
  * Available sections in the navigation
+ * Each section has an ID and display label
  */
 const sections = [
   { id: 'home', label: 'Home' },
@@ -12,6 +23,7 @@ const sections = [
 
 /**
  * Props for the SectionDots component
+ * @property sectionRefs - Array of refs to section elements for scrolling
  */
 interface SectionDotsProps {
   sectionRefs: React.RefObject<HTMLDivElement>[];
@@ -75,7 +87,7 @@ export default function SectionDots({ sectionRefs }: SectionDotsProps) {
   };
 
   return (
-    <div className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-4 items-center">
+    <div className="fixed right-4 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-4 items-center">
       <style>{`
         @keyframes n-wobble {
           0%, 100% { transform: rotate(0deg); }
@@ -95,11 +107,10 @@ export default function SectionDots({ sectionRefs }: SectionDotsProps) {
           className="focus:outline-none flex items-center justify-center relative"
         >
           <span
-            className={`font-extrabold select-none flex items-center justify-center transition-all duration-300 ease-in-out
+            className={`font-sans font-extrabold select-none flex items-center justify-center transition-all duration-300 ease-in-out
               ${active === idx ? 'text-xl text-emerald-400 drop-shadow-lg n-wobble' : 'text-xs text-emerald-100/80'}
             `}
             style={{
-              fontFamily: 'inherit',
               textShadow: active === idx
                 ? '0 0 2px #000, 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000'
                 : undefined

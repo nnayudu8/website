@@ -1,5 +1,23 @@
+/**
+ * NodeMesh Component
+ * Creates an interactive neural network visualization with animated pulses
+ * Features:
+ * - Dynamic node placement in clusters
+ * - Animated pulse propagation
+ * - Hub nodes with special properties
+ * - Responsive canvas sizing
+ * - Interactive pulse triggering
+ */
+
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 
+/**
+ * Interface for a pulse traveling between nodes
+ * @property progress - Progress along the path (0 to 1)
+ * @property startNode - Index of the starting node
+ * @property nextNode - Index of the destination node
+ * @property age - Time alive in seconds
+ */
 interface Pulse {
   progress: number; // 0 to 1
   startNode: number;
@@ -7,6 +25,15 @@ interface Pulse {
   age: number; // Time alive in seconds
 }
 
+/**
+ * Interface for a node in the neural network
+ * @property x - X coordinate position
+ * @property y - Y coordinate position
+ * @property neighbors - Array of indices of connected nodes
+ * @property pulses - Array of active pulses on this node
+ * @property isHub - Whether this is a hub node
+ * @property pulseState - Current pulse animation state (0 to 1)
+ */
 interface Node {
   x: number;
   y: number;
@@ -16,60 +43,103 @@ interface Node {
   pulseState?: number; // 0 to 1 for pulse animation
 }
 
+/**
+ * Props for the NodeMesh component
+ * @property position - Optional position to trigger pulses from
+ */
 interface NodeMeshProps {
   position?: { x: number; y: number };
 }
 
-const NODE_COLOR = '#2c374a';
-const HUB_COLOR = '#4fa3ff';
-const LINE_COLOR = 'rgba(44, 55, 74, 0.22)';
-const DOT_RADIUS = 3.5;
-const HUB_RADIUS = 5.5;
-const ORB_RADIUS = 4;
-const ORB_SPEED = 200; // pixels per second
-const ORB_LIFETIME = 1.0; // seconds
-const ORB_COLOR = 'rgba(255, 255, 255, 0.9)';
-const NODE_COUNT = 20;
-const CLUSTERS = 3;
-const CLUSTER_RADIUS = 420;
-const CLUSTER_SPREAD = 0.9;
+// Visual styling constants
+const NODE_COLOR = '#2c374a';      // Regular node color
+const HUB_COLOR = '#4fa3ff';       // Hub node color (brighter)
+const LINE_COLOR = 'rgba(100, 100, 100, 0.2)';  // Connection line color (lighter)
+const DOT_RADIUS = 3.5;            // Regular node size
+const HUB_RADIUS = 5.5;            // Hub node size (larger)
+const ORB_RADIUS = 4;              // Size of traveling pulse orbs
+const ORB_SPEED = 200;             // Speed of pulse movement (pixels/second)
+const ORB_LIFETIME = 1.0;          // How long pulses live (seconds)
+const ORB_COLOR = 'rgba(255, 255, 255, 0.9)'; // Pulse orb color
+const NODE_COUNT = 20;             // Total number of nodes
+const CLUSTERS = 4;                // Number of node clusters
+const CLUSTER_RADIUS = 420;        // Size of each cluster
 
+/**
+ * Generates a neural network layout with nodes arranged in clusters
+ * Creates a visually appealing network with hub nodes and connections
+ * @param width - Canvas width
+ * @param height - Canvas height
+ * @returns Array of nodes with positions and connections
+ */
 function getNeuralNetwork(width: number, height: number): Node[] {
-  // Place clusters in a fixed pattern
+  // Place clusters in an asymmetric pattern
   const clusters: { x: number; y: number }[] = [];
-  const r = Math.min(width, height) * CLUSTER_SPREAD / 2;
-  for (let i = 0; i < CLUSTERS; i++) {
-    const angle = (2 * Math.PI * i) / CLUSTERS;
-    clusters.push({
-      x: width / 2 + r * Math.cos(angle),
-      y: height / 2 + r * Math.sin(angle)
-    });
-  }
+  
+  // Adjust cluster positions for a more natural, balanced layout
+  clusters.push({
+    x: width * 0.15,  // Far left
+    y: height * 0.35  // Upper left
+  });
+  clusters.push({
+    x: width * 0.75,  // Right
+    y: height * 0.25  // Upper right
+  });
+  clusters.push({
+    x: width * 0.35,  // Center left
+    y: height * 0.65  // Lower left
+  });
+  clusters.push({
+    x: width * 0.65,  // Center right
+    y: height * 0.65  // Lower right
+  });
 
   // Place nodes in fixed positions within clusters
   const nodes: Node[] = [];
   for (let i = 0; i < NODE_COUNT; i++) {
     const cluster = clusters[Math.floor(i / (NODE_COUNT / CLUSTERS))];
     const angle = (2 * Math.PI * (i % (NODE_COUNT / CLUSTERS))) / (NODE_COUNT / CLUSTERS);
-    const radius = CLUSTER_RADIUS * (0.7 + 0.3 * Math.sin(i));
-    nodes.push({
-      x: cluster.x + radius * Math.cos(angle),
-      y: cluster.y + radius * Math.sin(angle),
-      neighbors: [],
-      pulses: []
-    });
+    const radius = CLUSTER_RADIUS * (0.4 + 0.6 * Math.sin(i * 0.5));
+    
+    // Calculate base position
+    const x = cluster.x + radius * Math.cos(angle);
+    const y = cluster.y + radius * Math.sin(angle);
+    
+    // For upper clusters, extend some nodes towards top middle
+    const clusterIndex = Math.floor(i / (NODE_COUNT / CLUSTERS));
+    if (clusterIndex <= 1 && y < cluster.y) { // Upper clusters, upper portion
+      const centerPull = 0.8; // Pull more towards center
+      const newX = x + (width * 0.5 - x) * centerPull;
+      const newY = y - (height * 0.05); // Keep height adjustment small
+      
+      nodes.push({
+        x: newX,
+        y: newY,
+        neighbors: [],
+        pulses: []
+      });
+    } else {
+      nodes.push({
+        x,
+        y,
+        neighbors: [],
+        pulses: []
+      });
+    }
   }
 
   // Pick fewer hub nodes
   const hubIndices = new Set<number>();
-  while (hubIndices.size < Math.max(2, Math.floor(NODE_COUNT / 10))) { // Reduced hub count
+  while (hubIndices.size < Math.max(2, Math.floor(NODE_COUNT / 10))) {
     hubIndices.add(Math.floor(Math.random() * NODE_COUNT));
   }
   nodes.forEach((node, i) => { node.isHub = hubIndices.has(i); });
 
-  // Connect nodes: each node connects to fewer nearby nodes
+  // Connect nodes: each node connects to nearby nodes
+  // Hub nodes get more connections for visual hierarchy
   for (let i = 0; i < nodes.length; i++) {
-    const nConnections = nodes[i].isHub ? 3 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2); // Reduced connections
+    // Increase connections for better network connectivity
+    const nConnections = nodes[i].isHub ? 4 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
     const dists = nodes
       .map((n, j) => ({ j, dist: Math.hypot(n.x - nodes[i].x, n.y - nodes[i].y) }))
       .filter(({ dist }) => dist > 0.1)
@@ -87,10 +157,18 @@ function getNeuralNetwork(width: number, height: number): Node[] {
   return nodes;
 }
 
+/**
+ * Interface for the NodeMesh component's ref handle
+ * Allows external components to trigger pulses
+ */
 export interface NodeMeshHandle {
   triggerPulse: () => void;
 }
 
+/**
+ * NodeMesh component that creates an interactive neural network visualization
+ * with animated pulses traveling between nodes
+ */
 const NodeMesh = forwardRef<NodeMeshHandle, NodeMeshProps>(({ position }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<Node[]>([]);
@@ -303,7 +381,7 @@ const NodeMesh = forwardRef<NodeMeshHandle, NodeMeshProps>(({ position }, ref) =
         });
         startNode.pulseState = undefined; // Reset pulse state
         setRerender((r) => r + 1);
-      }, 1400); // Set to exactly 1400ms
+      }, 1000); // Reduced from 1500ms to 1000ms for nearly instantaneous transition
       
       setRerender((r) => r + 1);
     }
