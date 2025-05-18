@@ -1,37 +1,9 @@
+/* Import required stylesheets */
 @import "tailwindcss";
 @import "@fontsource/roboto"; /* default weight 400 */
 @import "@fontsource/roboto/700.css"; /* for bold */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-/* @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-} */
-
-
-body {
-  background:
-    linear-gradient(0deg, #00000012, #00000042, #00000077, #00000082, #00000022),
-    linear-gradient(-45deg, #000000, #000000, #a7f4bd, #000000, #000000);
-  background-size: 600% 600%;
-  animation: gradientMove 15s ease infinite;
-}
-
-@keyframes gradientMove {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+html, body {
+  font-family: var(--font-sentient), ui-sans-serif, system-ui, sans-serif;
 }
 
