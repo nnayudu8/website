@@ -13,46 +13,36 @@
 import React from 'react';
 import Letter3DContainer from './Letter3DContainer';
 
-/**
- * Constants for the logo styling
- */
-const LOGO_STYLES = {
-  SIZE: {
-    CONTAINER: 'w-24 h-24',
-    TEXT: 3
-  },
-  POSITION: 'top-2 left-2',
-  Z_INDEX: 'z-50'
-} as const;
+
 
 /**
  * Props for the PersistentLogo component
  * @property onHomeClick - Callback function when logo is clicked
+ * @property color - Optional color for the logo
  */
 interface PersistentLogoProps {
   /** Optional callback function when the logo is clicked */
-  onHomeClick?: () => void;
+  onHomeClick: () => void;
+  color?: string;
 }
 
 /**
  * PersistentLogo component that displays a 3D logo that stays fixed
  * in the top-left corner of the screen
  */
-export default function PersistentLogo({ onHomeClick }: PersistentLogoProps) {
+export default function PersistentLogo({ onHomeClick, color = "text-emerald-400" }: PersistentLogoProps) {
   return (
-    <div 
-      className={`fixed ${LOGO_STYLES.POSITION} ${LOGO_STYLES.Z_INDEX} ${LOGO_STYLES.SIZE.CONTAINER} cursor-pointer transition-transform duration-200`}
+    <button
       onClick={onHomeClick}
-      role="button"
-      tabIndex={0}
+      className="fixed top-4 left-4 z-50 focus:outline-none"
       aria-label="Return to home"
     >
-      <div className="w-full h-full">
+      <div className="hover:scale-110 transition-transform duration-300">
         <Letter3DContainer 
-          size={LOGO_STYLES.SIZE.TEXT} 
-          className="w-full h-full" 
+          className="w-24 h-24" 
+          color={color === "text-orange-500" ? "#fb923c" : color === "text-blue-400" ? "#60a5fa" : "#ffffff"}
         />
       </div>
-    </div>
+    </button>
   );
 } 

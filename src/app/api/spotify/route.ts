@@ -51,6 +51,8 @@ async function getAccessToken(): Promise<AccessTokenResponse> {
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Spotify refresh failed:", errorBody);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 

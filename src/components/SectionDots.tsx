@@ -18,7 +18,8 @@ import { useEffect, useState } from 'react';
  */
 const sections = [
   { id: 'home', label: 'Home' },
-  { id: 'music', label: 'Music' },
+  { id: 'about', label: 'About' },
+  { id: 'coming-soon', label: 'Coming Soon' },
 ];
 
 /**
