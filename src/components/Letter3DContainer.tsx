@@ -126,22 +126,23 @@ function SpinningNN({ fontPath, color, bevel, text, size = TEXT_CONFIG.DEFAULT_S
  * Props for the Letter3DContainer component
  * @property className - Additional CSS classes
  * @property size - Size of the 3D text
+ * @property color - Color of the 3D text
  */
 interface Letter3DContainerProps {
   className?: string;
   size?: number;
+  color?: string;
 }
 
 /**
  * Letter3DContainer component that creates a 3D scene with spinning text
  * using Three.js and React Three Fiber
  */
-export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.DEFAULT_SIZE }: Letter3DContainerProps) {
+export default function Letter3DContainer({ className = '', size = TEXT_CONFIG.DEFAULT_SIZE, color = "#ffffff" }: Letter3DContainerProps) {
   // Configuration for the 3D text
   const text = "NN";
   const fontIndex = 1; // optimer
   const weightIndex = 1; // bold
-  const color = "#ffffff";
   const bevel = true;
 
   // Get the font path based on selected font and weight

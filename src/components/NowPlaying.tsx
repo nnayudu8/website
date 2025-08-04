@@ -53,6 +53,34 @@ const SCROLL_DELAY = 120;
 const TRANSITION_DELAY = 350;
 
 /**
+ * Equalizer bars component with animated bars
+ * Creates a visual representation of music playback
+ */
+const Bars = React.memo(({ isPlaying }: { isPlaying: boolean }) => (
+  <div className="flex items-end gap-[3px] h-6 w-8 mr-4">
+    {[1, 2, 3, 4].map((bar) => (
+      <div
+        key={bar}
+        className={`w-1.5 rounded bg-white/80 animate-eq-bar${bar}`}
+        style={{ animationPlayState: isPlaying ? 'running' : 'paused' }}
+      />
+    ))}
+    <style>{`
+      @keyframes eq-bar1 { 0%, 100% { height: 35%; } 50% { height: 95%; } }
+      @keyframes eq-bar2 { 0%, 100% { height: 55%; } 50% { height: 75%; } }
+      @keyframes eq-bar3 { 0%, 100% { height: 75%; } 50% { height: 35%; } }
+      @keyframes eq-bar4 { 0%, 100% { height: 45%; } 50% { height: 85%; } }
+      .animate-eq-bar1 { animation: eq-bar1 1.1s infinite ease-in-out; }
+      .animate-eq-bar2 { animation: eq-bar2 1.3s infinite ease-in-out; }
+      .animate-eq-bar3 { animation: eq-bar3 1s infinite ease-in-out; }
+      .animate-eq-bar4 { animation: eq-bar4 1.2s infinite ease-in-out; }
+    `}</style>
+  </div>
+));
+
+Bars.displayName = 'Bars';
+
+/**
  * NowPlaying component that displays the current Spotify track
  * with animated equalizer bars and scrolling text
  */
@@ -248,32 +276,6 @@ export default function NowPlaying() {
   if (isScrollingLeft) transform = `translateX(${scrollDistance}px)`;
   if (isScrollingRight) transform = 'translateX(0px)';
 
-  /**
-   * Equalizer bars component with animated bars
-   * Creates a visual representation of music playback
-   */
-  const Bars = () => (
-    <div className="flex items-end gap-[3px] h-6 w-8 mr-4">
-      {[1, 2, 3, 4].map((bar) => (
-        <div
-          key={bar}
-          className={`w-1.5 rounded bg-white/80 animate-eq-bar${bar}`}
-          style={{ animationPlayState: data.isPlaying ? 'running' : 'paused' }}
-        />
-      ))}
-      <style>{`
-        @keyframes eq-bar1 { 0%, 100% { height: 35%; } 50% { height: 95%; } }
-        @keyframes eq-bar2 { 0%, 100% { height: 55%; } 50% { height: 75%; } }
-        @keyframes eq-bar3 { 0%, 100% { height: 75%; } 50% { height: 35%; } }
-        @keyframes eq-bar4 { 0%, 100% { height: 45%; } 50% { height: 85%; } }
-        .animate-eq-bar1 { animation: eq-bar1 1.1s infinite; }
-        .animate-eq-bar2 { animation: eq-bar2 1.3s infinite; }
-        .animate-eq-bar3 { animation: eq-bar3 1s infinite; }
-        .animate-eq-bar4 { animation: eq-bar4 1.2s infinite; }
-      `}</style>
-    </div>
-  );
-
   // Calculate progress percentage
   const progressPercent =
     localProgress && data.duration
@@ -291,7 +293,7 @@ export default function NowPlaying() {
       }}
     >
       {/* Animated equalizer bars */}
-      <Bars />
+      <Bars isPlaying={data.isPlaying} />
       
       {/* Track information container */}
       <div className="flex-1 min-w-0 overflow-hidden">

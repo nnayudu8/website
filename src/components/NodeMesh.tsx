@@ -61,9 +61,25 @@ const ORB_RADIUS = 4;              // Size of traveling pulse orbs
 const ORB_SPEED = 200;             // Speed of pulse movement (pixels/second)
 const ORB_LIFETIME = 1.0;          // How long pulses live (seconds)
 const ORB_COLOR = 'rgba(255, 255, 255, 0.9)'; // Pulse orb color
-const NODE_COUNT = 20;             // Total number of nodes
 const CLUSTERS = 4;                // Number of node clusters
 const CLUSTER_RADIUS = 420;        // Size of each cluster
+
+/**
+ * Calculates the number of nodes based on screen dimensions
+ * @param width - Screen width
+ * @param height - Screen height
+ * @returns Number of nodes to display
+ */
+function calculateNodeCount(width: number, height: number): number {
+  // Base calculation on screen area
+  const screenArea = width * height;
+  const baseArea = 1920 * 1080; // Reference desktop resolution
+  
+  // Calculate nodes based on screen area ratio
+  // Minimum 12 nodes, maximum 24 nodes
+  const nodeCount = Math.round(12 + (screenArea / baseArea) * 12);
+  return Math.min(Math.max(nodeCount, 12), 24);
+}
 
 /**
  * Generates a neural network layout with nodes arranged in clusters
@@ -73,77 +89,103 @@ const CLUSTER_RADIUS = 420;        // Size of each cluster
  * @returns Array of nodes with positions and connections
  */
 function getNeuralNetwork(width: number, height: number): Node[] {
-  // Place clusters in an asymmetric pattern
+  const nodeCount = calculateNodeCount(width, height);
+  
+  // Define the content box to avoid
+  const contentBox = {
+    // Scale the box size based on screen dimensions
+    // For larger screens, make the box proportionally smaller
+    left: width * (0.35 + Math.min(0, (width - 768) * 0.0001)),    // Decreases for larger screens
+    right: width * (0.65 - Math.min(0, (width - 768) * 0.0001)),   // Increases for larger screens
+    top: height * (0.15 + Math.min(0, (height - 768) * 0.0001)),   // Decreases for larger screens
+    bottom: height * (0.35 - Math.min(0, (height - 768) * 0.0001)) // Increases for larger screens
+  };
+
+  // Place clusters in a ring around the content box
   const clusters: { x: number; y: number }[] = [];
   
-  // Adjust cluster positions for a more natural, balanced layout
-  clusters.push({
-    x: width * 0.15,  // Far left
-    y: height * 0.35  // Upper left
-  });
-  clusters.push({
-    x: width * 0.75,  // Right
-    y: height * 0.25  // Upper right
-  });
-  clusters.push({
-    x: width * 0.35,  // Center left
-    y: height * 0.65  // Lower left
-  });
-  clusters.push({
-    x: width * 0.65,  // Center right
-    y: height * 0.65  // Lower right
-  });
+  // Calculate the center of the content box
+  const centerX = (contentBox.left + contentBox.right) / 2;
+  const centerY = (contentBox.top + contentBox.bottom) / 2;
+  
+  // Calculate the radius of the ring (distance from content box center)
+  // Scale the ring radius based on screen size
+  const baseRingRadius = Math.max(
+    (contentBox.right - contentBox.left) * 0.8,
+    (contentBox.bottom - contentBox.top) * 0.8
+  );
+  const ringRadius = baseRingRadius * (1 + Math.min(0.5, (width - 768) * 0.0005)); // Increases for larger screens
+
+  // Place clusters in a ring around the content box
+  for (let i = 0; i < CLUSTERS; i++) {
+    const angle = (i * 2 * Math.PI) / CLUSTERS;
+    // Add some randomness to the angle to make it look more natural
+    const angleVariation = (Math.random() - 0.5) * 0.3;
+    const finalAngle = angle + angleVariation;
+    
+    // Calculate cluster position
+    const x = centerX + ringRadius * Math.cos(finalAngle);
+    const y = centerY + ringRadius * Math.sin(finalAngle);
+    
+    clusters.push({ x, y });
+  }
 
   // Place nodes in fixed positions within clusters
   const nodes: Node[] = [];
-  for (let i = 0; i < NODE_COUNT; i++) {
-    const cluster = clusters[Math.floor(i / (NODE_COUNT / CLUSTERS))];
-    const angle = (2 * Math.PI * (i % (NODE_COUNT / CLUSTERS))) / (NODE_COUNT / CLUSTERS);
-    const radius = CLUSTER_RADIUS * (0.4 + 0.6 * Math.sin(i * 0.5));
+  for (let i = 0; i < nodeCount; i++) {
+    const cluster = clusters[Math.floor(i / (nodeCount / CLUSTERS))];
+    const angle = (2 * Math.PI * (i % (nodeCount / CLUSTERS))) / (nodeCount / CLUSTERS);
+    const radius = CLUSTER_RADIUS * (0.6 + 0.4 * Math.sin(i * 0.5));
     
     // Calculate base position
-    const x = cluster.x + radius * Math.cos(angle);
-    const y = cluster.y + radius * Math.sin(angle);
+    let x = cluster.x + radius * Math.cos(angle);
+    let y = cluster.y + radius * Math.sin(angle);
     
-    // For upper clusters, extend some nodes towards top middle
-    const clusterIndex = Math.floor(i / (NODE_COUNT / CLUSTERS));
-    if (clusterIndex <= 1 && y < cluster.y) { // Upper clusters, upper portion
-      const centerPull = 0.8; // Pull more towards center
-      const newX = x + (width * 0.5 - x) * centerPull;
-      const newY = y - (height * 0.05); // Keep height adjustment small
-      
-      nodes.push({
-        x: newX,
-        y: newY,
-        neighbors: [],
-        pulses: []
-      });
-    } else {
-      nodes.push({
-        x,
-        y,
-        neighbors: [],
-        pulses: []
-      });
-    }
+    // Keep nodes within screen bounds
+    x = Math.max(0, Math.min(width, x));
+    y = Math.max(0, Math.min(height, y));
+    
+    nodes.push({
+      x,
+      y,
+      neighbors: [],
+      pulses: []
+    });
   }
 
   // Pick fewer hub nodes
   const hubIndices = new Set<number>();
-  while (hubIndices.size < Math.max(2, Math.floor(NODE_COUNT / 10))) {
-    hubIndices.add(Math.floor(Math.random() * NODE_COUNT));
+  while (hubIndices.size < Math.max(2, Math.floor(nodeCount / 10))) {
+    hubIndices.add(Math.floor(Math.random() * nodeCount));
   }
   nodes.forEach((node, i) => { node.isHub = hubIndices.has(i); });
 
   // Connect nodes: each node connects to nearby nodes
   // Hub nodes get more connections for visual hierarchy
   for (let i = 0; i < nodes.length; i++) {
-    // Increase connections for better network connectivity
-    const nConnections = nodes[i].isHub ? 4 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
+    // Calculate base number of connections based on screen size
+    const screenArea = width * height;
+    const baseArea = 1920 * 1080; // Reference desktop resolution
+    const areaRatio = Math.min(screenArea / baseArea, 1.5); // Cap at 1.5x for very large screens
+    
+    // Base connections vary by node type and screen size
+    const baseConnections = nodes[i].isHub 
+      ? Math.floor(3 + areaRatio * 2) // Hub nodes: 3-5 connections
+      : Math.floor(1 + areaRatio);    // Regular nodes: 1-2 connections
+    
+    // Add some randomness to the number of connections
+    const nConnections = baseConnections + Math.floor(Math.random() * 2);
+    
     const dists = nodes
-      .map((n, j) => ({ j, dist: Math.hypot(n.x - nodes[i].x, n.y - nodes[i].y) }))
+      .map((n, j) => ({ 
+        j, 
+        dist: Math.hypot(n.x - nodes[i].x, n.y - nodes[i].y),
+        // Add a small random factor to distance to create more organic connections
+        randomFactor: Math.random() * 0.2 
+      }))
       .filter(({ dist }) => dist > 0.1)
-      .sort((a, b) => a.dist - b.dist);
+      .sort((a, b) => (a.dist + a.randomFactor) - (b.dist + b.randomFactor));
+    
     let added = 0;
     for (let k = 0; k < dists.length && added < nConnections; k++) {
       const ni = dists[k].j;
@@ -393,7 +435,7 @@ const NodeMesh = forwardRef<NodeMeshHandle, NodeMeshProps>(({ position }, ref) =
       className="fixed inset-0 w-full h-full"
       style={{
         zIndex: 1,
-        background: 'transparent',
+        background: 'linear-gradient(180deg, rgba(20, 28, 60, 0.95) 0%, rgba(2, 3, 8, 0.95) 100%)',
         pointerEvents: 'auto',
         position: 'fixed',
         top: 0,

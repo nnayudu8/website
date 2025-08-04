@@ -11,6 +11,7 @@ import { FiGithub, FiLinkedin, FiMail, FiFileText } from 'react-icons/fi';
 import { IconBaseProps } from 'react-icons';
 import NodeMesh, { NodeMeshHandle } from '@/components/NodeMesh';
 import SkillTyper from '@/components/SkillTyper';
+import AboutSection from '@/components/AboutSection';
 
 /**
  * Configuration for social media and contact links
@@ -73,7 +74,8 @@ const ANIMATION_STYLES = {
 export default function Home() {
   // Refs for DOM elements and components
   const homeRef = useRef<HTMLDivElement>(null!);
-  const musicRef = useRef<HTMLDivElement>(null!);
+  const aboutRef = useRef<HTMLDivElement>(null!);
+  const comingSoonRef = useRef<HTMLDivElement>(null!);
   const nodeMeshRef = useRef<NodeMeshHandle>(null!);
   
   // State for tracking active sections and skill positions
@@ -108,7 +110,7 @@ export default function Home() {
       
       <div className="relative z-10">
         {/* Navigation dots for section scrolling */}
-        <SectionDots sectionRefs={[homeRef, musicRef]} />
+        <SectionDots sectionRefs={[homeRef, aboutRef, comingSoonRef]} />
         
         {/* Persistent logo with home navigation */}
         <PersistentLogo 
@@ -179,29 +181,41 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Music Section - Placeholder for future content */}
+        {/* About Section */}
         <section
-          ref={musicRef}
-          id="music"
-          className="min-h-screen sm:snap-start flex flex-col items-center justify-center px-4 text-center backdrop-blur-sm"
+          ref={aboutRef}
+          id="about"
+          className="min-h-screen sm:snap-start relative"
         >
-          <div className="relative">
-            <div className="absolute bottom-0 left-0 w-full h-[1.25px] bg-emerald-400/70 animate-underline -z-10" />
-            <h2 className="text-4xl sm:text-6xl font-medium text-white/80 relative">
-              Coming Soon
-            </h2>
-            <style>{`
-              @keyframes underline {
-                0%, 100% { transform: scaleX(0); }
-                50% { transform: scaleX(1); }
-              }
-              .animate-underline {
-                animation: underline 2.5s ease-in-out infinite;
-                transform-origin: center;
-              }
-            `}</style>
-          </div>
+          <AboutSection />
         </section>
+
+        {/* Coming Soon Section with blur */}
+        <div className="relative">
+          <div className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(6px)'}} />
+          <section
+            ref={comingSoonRef}
+            id="coming-soon"
+            className="min-h-screen sm:snap-start flex flex-col items-center justify-center px-4 text-center z-10"
+          >
+            <div className="relative">
+              <div className="absolute bottom-0 left-0 w-full h-[1.25px] bg-emerald-400/70 animate-underline z-20" />
+              <h2 className="text-4xl sm:text-6xl font-medium text-white/80 relative">
+                Coming Soon
+              </h2>
+              <style>{`
+                @keyframes underline {
+                  0%, 100% { transform: scaleX(0); }
+                  50% { transform: scaleX(1); }
+                }
+                .animate-underline {
+                  animation: underline 2.5s ease-in-out infinite;
+                  transform-origin: center;
+                }
+              `}</style>
+            </div>
+          </section>
+        </div>
 
         {/* Bottom spacer to prevent content from being hidden behind floating elements */}
         <div className="h-24" />
