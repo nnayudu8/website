@@ -62,6 +62,9 @@ const ANIMATION_STYLES = {
   }
 } as const;
 
+/** Toggle to show the About section between Home and Coming Soon. */
+const SHOW_ABOUT_SECTION = false;
+
 /**
  * Home page component that serves as the main entry point of the website
  * Implements a responsive layout with interactive elements and animations
@@ -110,7 +113,13 @@ export default function Home() {
       
       <div className="relative z-10">
         {/* Navigation dots for section scrolling */}
-        <SectionDots sectionRefs={[homeRef, aboutRef, comingSoonRef]} />
+        <SectionDots
+          sectionRefs={
+            SHOW_ABOUT_SECTION
+              ? [homeRef, aboutRef, comingSoonRef]
+              : [homeRef, comingSoonRef]
+          }
+        />
         
         {/* Persistent logo with home navigation */}
         <PersistentLogo 
@@ -130,7 +139,7 @@ export default function Home() {
           
           {/* Title with responsive font size */}
           <div className="main-title text-[clamp(0.625rem,min(3vw,1.75rem),min(3vw,1.75rem))] font-semibold text-gray-300 whitespace-nowrap -mt-2">
-            Software Engineer  |  Energy Shifter
+            Software Engineer
           </div>
           
           {/* Social media links with hover effects */}
@@ -181,14 +190,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* About Section */}
-        <section
-          ref={aboutRef}
-          id="about"
-          className="min-h-screen sm:snap-start relative"
-        >
-          <AboutSection />
-        </section>
+        {SHOW_ABOUT_SECTION && (
+          <section
+            ref={aboutRef}
+            id="about"
+            className="min-h-screen sm:snap-start relative"
+          >
+            <AboutSection />
+          </section>
+        )}
 
         {/* Coming Soon Section with blur */}
         <div className="relative">

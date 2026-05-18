@@ -13,14 +13,21 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Available sections in the navigation
- * Each section has an ID and display label
+ * Section labels for navigation dots (order matches sectionRefs from the page).
  */
-const sections = [
-  { id: 'home', label: 'Home' },
-  { id: 'about', label: 'About' },
-  { id: 'coming-soon', label: 'Coming Soon' },
-];
+function sectionsForRefCount(count: number) {
+  if (count === 2) {
+    return [
+      { id: 'home', label: 'Home' },
+      { id: 'coming-soon', label: 'Coming Soon' },
+    ] as const;
+  }
+  return [
+    { id: 'home', label: 'Home' },
+    { id: 'about', label: 'About' },
+    { id: 'coming-soon', label: 'Coming Soon' },
+  ] as const;
+}
 
 /**
  * Props for the SectionDots component
@@ -45,6 +52,7 @@ const OBSERVER_OPTIONS = {
  */
 export default function SectionDots({ sectionRefs }: SectionDotsProps) {
   const [active, setActive] = useState(0);
+  const sections = sectionsForRefCount(sectionRefs.length);
 
   /**
    * Set up intersection observer to track which section is currently in view
@@ -75,7 +83,7 @@ export default function SectionDots({ sectionRefs }: SectionDotsProps) {
     });
 
     return () => observer.disconnect();
-  }, [sectionRefs]);
+  }, [sectionRefs, sections.length]);
 
   /**
    * Handle click on a navigation dot to scroll to the corresponding section
