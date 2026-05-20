@@ -1,5 +1,4 @@
 import Nav from '@/components/Nav';
-import PersistentLogo from '@/components/PersistentLogo';
 import HeroSection from '@/components/HeroSection';
 import WorkSection from '@/components/WorkSection';
 import ProjectsSection from '@/components/ProjectsSection';
@@ -10,7 +9,6 @@ export default function Home() {
   return (
     <main>
       <Nav />
-      <PersistentLogo />
       <HeroSection />
       <WorkSection />
       <ProjectsSection />

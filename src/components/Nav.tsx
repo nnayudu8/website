@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { RiMenu3Line, RiCloseLine } from 'react-icons/ri';
+import Letter3DContainer from './Letter3DContainer';
 
 const NAV_LINKS = [
   { label: 'work', href: '#work' },
@@ -32,9 +33,13 @@ export default function Nav() {
         borderBottom: scrolled ? '1px solid var(--color-border)' : 'none',
       }}
     >
-      <div className="max-w-[1100px] mx-auto px-6 sm:px-10 h-14 flex items-center justify-between">
-        {/* spacer so nav links don't crowd the persistent logo */}
-        <div className="w-24" />
+      <div
+        className="max-w-[1100px] mx-auto h-14 flex items-center justify-between"
+        style={{ paddingLeft: 'clamp(1.5rem, 8vw, 6rem)', paddingRight: 'clamp(1.5rem, 8vw, 6rem)' }}
+      >
+        <a href="#hero" className="block w-16 h-16 shrink-0" style={{ marginLeft: '-0.9rem' }}>
+          <Letter3DContainer size={3} className="w-full h-full" />
+        </a>
 
         {/* Desktop links */}
         <div className="hidden sm:flex items-center gap-8">
