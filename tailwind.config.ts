@@ -9,11 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        chillax: ['var(--font-chillax)'],
+        sentient: ['var(--font-sentient)'],
+        manrope: ['var(--font-manrope)'],
       },
     },
   },
   plugins: [],
 }
 
-export default config 
+export default config

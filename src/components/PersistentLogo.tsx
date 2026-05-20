@@ -1,48 +1,35 @@
-/**
- * PersistentLogo Component
- * Creates a persistent logo that stays visible while scrolling
- * Features:
- * - Fixed position in top-left corner
- * - Click to scroll to home section
- * - Smooth hover effects
- * - 3D text animation
- */
-
 'use client';
 
-import React from 'react';
+import { useState } from 'react';
 import Letter3DContainer from './Letter3DContainer';
 
+export default function PersistentLogo() {
+  const [isExpanded, setIsExpanded] = useState(false);
 
-
-/**
- * Props for the PersistentLogo component
- * @property onHomeClick - Callback function when logo is clicked
- * @property color - Optional color for the logo
- */
-interface PersistentLogoProps {
-  /** Optional callback function when the logo is clicked */
-  onHomeClick: () => void;
-  color?: string;
-}
-
-/**
- * PersistentLogo component that displays a 3D logo that stays fixed
- * in the top-left corner of the screen
- */
-export default function PersistentLogo({ onHomeClick, color = "text-emerald-400" }: PersistentLogoProps) {
   return (
-    <button
-      onClick={onHomeClick}
-      className="fixed top-4 left-4 z-50 focus:outline-none"
-      aria-label="Return to home"
-    >
-      <div className="hover:scale-110 transition-transform duration-300">
-        <Letter3DContainer 
-          className="w-24 h-24" 
-          color={color === "text-orange-500" ? "#fb923c" : color === "text-blue-400" ? "#60a5fa" : "#ffffff"}
-        />
+    <>
+      {/* Small persistent logo */}
+      <div
+        className="fixed top-2 left-2 z-50 w-24 h-24 cursor-pointer hover:scale-105 transition-transform duration-200"
+        onClick={() => setIsExpanded(true)}
+      >
+        <Letter3DContainer size={3} className="w-full h-full" />
       </div>
-    </button>
+
+      {/* Expanded overlay */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+          onClick={() => setIsExpanded(false)}
+        >
+          <div
+            className="w-[70vw] h-[40vh] sm:w-[80vw] sm:h-[80vh] max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Letter3DContainer size={4} className="w-full h-full" />
+          </div>
+        </div>
+      )}
+    </>
   );
-} 
+}
