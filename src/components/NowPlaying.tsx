@@ -61,8 +61,8 @@ const Bars = React.memo(({ isPlaying }: { isPlaying: boolean }) => (
     {[1, 2, 3, 4].map((bar) => (
       <div
         key={bar}
-        className={`w-1.5 rounded bg-white/80 animate-eq-bar${bar}`}
-        style={{ animationPlayState: isPlaying ? 'running' : 'paused' }}
+        className={`w-1.5 rounded animate-eq-bar${bar}`}
+        style={{ animationPlayState: isPlaying ? 'running' : 'paused', background: 'var(--color-accent)' }}
       />
     ))}
     <style>{`
@@ -284,11 +284,10 @@ export default function NowPlaying() {
 
   return (
     <div
-      className="flex items-center gap-4 px-4 py-3 rounded-full max-w-[95vw] sm:max-w-md"
+      className="flex items-center gap-4 px-4 py-3 rounded-md max-w-[95vw] sm:max-w-md"
       style={{
-        background: 'rgba(0,0,0,0.25)',
-        boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)',
-        backdropFilter: 'blur(8px)',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
         position: 'relative',
       }}
     >
@@ -311,8 +310,10 @@ export default function NowPlaying() {
           >
             <span
               ref={textRef}
-              className="font-bold text-white whitespace-nowrap inline-block"
+              className="font-medium whitespace-nowrap inline-block"
               style={{
+                color: 'var(--color-text)',
+                fontSize: '0.875rem',
                 transform,
                 transition: `transform ${transitionDuration} ${isScrollingRight ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'linear'}`,
                 willChange: 'transform',
@@ -325,7 +326,7 @@ export default function NowPlaying() {
           
           {/* Artist name */}
           {data.isPlaying && (
-            <span className="text-emerald-100 text-xs font-medium truncate min-w-0">
+            <span className="text-xs font-medium truncate min-w-0" style={{ color: 'var(--color-text-muted)' }}>
               {data.artist}
             </span>
           )}
@@ -333,38 +334,29 @@ export default function NowPlaying() {
         
         {/* Album name */}
         {data.isPlaying && (
-          <div className="text-xs text-gray-200 truncate min-w-0">
+          <div className="text-xs truncate min-w-0" style={{ color: 'var(--color-text-muted)' }}>
             {data.album}
           </div>
         )}
         
         {/* Progress bar */}
         {data.isPlaying && (
-          <div className="w-full h-1 bg-white/20 rounded mt-2">
+          <div className="w-full h-[2px] rounded mt-2" style={{ background: 'var(--color-border)' }}>
             <div
-              className="h-full bg-emerald-500 rounded transition-all duration-1000"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full rounded transition-all duration-1000"
+              style={{ width: `${progressPercent}%`, background: 'var(--color-accent)' }}
             />
           </div>
         )}
       </div>
       
       {/* Spotify icon with idle animation */}
-      <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <span style={{ display: 'flex', alignItems: 'center' }}>
         <SpotifyIcon
-          className={`text-white/80 text-2xl ml-2 drop-shadow ${isIdle ? 'spotify-pulse' : ''}`}
-          style={{ color: isIdle ? '#1DB954' : undefined, transition: 'color 0.3s' }}
+          className="text-2xl ml-2"
+          style={{ color: '#1DB954' }}
           aria-hidden="true"
         />
-        <style>{`
-          @keyframes spotifyPulse {
-            0%, 100% { filter: drop-shadow(0 0 0 #1DB954); transform: scale(1); }
-            50% { filter: drop-shadow(0 0 12px #1DB954); transform: scale(1.15); }
-          }
-          .spotify-pulse {
-            animation: spotifyPulse 1.5s infinite;
-          }
-        `}</style>
       </span>
     </div>
   );

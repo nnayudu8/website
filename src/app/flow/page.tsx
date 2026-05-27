@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import PersistentLogo from '@/components/PersistentLogo';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 // Wave component
@@ -88,11 +88,13 @@ export default function Flow() {
         </div>
       )}
 
-      {/* Persistent logo with home navigation */}
-      <PersistentLogo 
-        onHomeClick={() => window.location.href = '/'}
-        color="text-blue-400" 
-      />
+      {/* Back to home */}
+      <Link
+        href="/"
+        className="fixed top-4 left-4 z-50 text-blue-400/70 hover:text-blue-400 transition-colors duration-200 text-sm font-medium"
+      >
+        ← home
+      </Link>
 
       <section 
         ref={flowRef}
