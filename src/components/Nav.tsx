@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { RiMenu3Line, RiCloseLine } from 'react-icons/ri';
+// import { RiMenu3Line, RiCloseLine } from 'react-icons/ri';
 import Letter3DContainer from './Letter3DContainer';
 
-const NAV_LINKS = [
-  { label: 'work', href: '#work' },
-  { label: 'projects', href: '#projects' },
-  { label: 'now', href: '#now' },
-  { label: 'contact', href: '#contact' },
-];
+// const NAV_LINKS = [
+//   { label: 'work', href: '#work' },
+//   { label: 'projects', href: '#projects' },
+//   { label: 'now', href: '#now' },
+//   { label: 'contact', href: '#contact' },
+// ];
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  // const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -21,7 +21,7 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleLinkClick = () => setMenuOpen(false);
+  // const handleLinkClick = () => setMenuOpen(false);
 
   const pointerStart = useRef({ x: 0, y: 0 });
   const didDrag = useRef(false);

@@ -18,6 +18,7 @@ const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 function OneLiner() {
   const ref = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   const [highlighted, setHighlighted] = useState(-1);
   const [initialDone, setInitialDone] = useState(false);
@@ -54,19 +55,15 @@ function OneLiner() {
     const initialTimer = setTimeout(async () => {
       await cycle();
       if (cancelled) return;
-      const interval = setInterval(async () => {
+      intervalRef.current = setInterval(async () => {
         if (!cancelled) await cycle();
       }, 6000);
-      // store interval id for cleanup
-      (ref.current as any).__interval = interval;
     }, 2000);
 
     return () => {
       cancelled = true;
       clearTimeout(initialTimer);
-      if ((ref.current as any)?.__interval) {
-        clearInterval((ref.current as any).__interval);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [isInView, reducedMotion]);
 
