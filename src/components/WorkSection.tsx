@@ -6,6 +6,12 @@ import ScrollReveal from './ScrollReveal';
 const EXPERIENCE = [
   {
     role: 'Software Engineer Intern',
+    company: 'Capital One',
+    logo: '/logos/capitalone.png',
+    description: 'Incoming software engineer intern.',
+  },
+  {
+    role: 'Software Engineer Intern',
     company: 'CGI',
     logo: '/logos/cgi.png',
     description:
@@ -69,14 +75,8 @@ export default function WorkSection() {
                   alt={job.company}
                   width={40}
                   height={40}
-                  className="object-contain transition-all duration-300"
-                  style={{
-                    filter: 'grayscale(1)',
-                    width: 40,
-                    height: 40,
-                  }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLImageElement).style.filter = 'grayscale(0)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLImageElement).style.filter = 'grayscale(1)')}
+                  className="object-contain"
+                  style={{ width: 40, height: 40 }}
                 />
               </div>
 

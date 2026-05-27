@@ -1,19 +1,11 @@
 import Nav from '@/components/Nav';
-import HeroSection from '@/components/HeroSection';
-import WorkSection from '@/components/WorkSection';
-import ProjectsSection from '@/components/ProjectsSection';
-import NowSection from '@/components/NowSection';
-import ContactFooter from '@/components/ContactFooter';
+import HomeSection from '@/components/HomeSection';
 
 export default function Home() {
   return (
     <main>
       <Nav />
-      <HeroSection />
-      <WorkSection />
-      <ProjectsSection />
-      <NowSection />
-      <ContactFooter />
+      <HomeSection />
     </main>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { motion, useInView } from 'framer-motion';
 import ScrollReveal from './ScrollReveal';
 import { FiGithub, FiLinkedin, FiMail, FiFileText } from 'react-icons/fi';
 
@@ -10,10 +12,96 @@ const LINKS = [
   { Icon: FiFileText, label: 'Resume', href: '/Nidhil_Nayudu_resume.pdf' },
 ];
 
-export default function HeroSection() {
+const WORDS = ['building.', 'teaching.', 'hooping.', 'cooking.'];
+
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+function OneLiner() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const [highlighted, setHighlighted] = useState(-1);
+  const [initialDone, setInitialDone] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, []);
+
+  // Mark initial stagger complete after last word finishes
+  useEffect(() => {
+    if (!isInView) return;
+    const t = setTimeout(() => setInitialDone(true), (WORDS.length - 1) * 100 + 600);
+    return () => clearTimeout(t);
+  }, [isInView]);
+
+  useEffect(() => {
+    if (!isInView || reducedMotion) return;
+
+    let cancelled = false;
+
+    const cycle = async () => {
+      for (let i = 0; i < WORDS.length; i++) {
+        if (cancelled) return;
+        setHighlighted(i);
+        await delay(500);
+        if (cancelled) return;
+        setHighlighted(-1);
+        await delay(300);
+      }
+    };
+
+    // wait for stagger to finish, then start first cycle
+    const initialTimer = setTimeout(async () => {
+      await cycle();
+      if (cancelled) return;
+      const interval = setInterval(async () => {
+        if (!cancelled) await cycle();
+      }, 6000);
+      // store interval id for cleanup
+      (ref.current as any).__interval = interval;
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(initialTimer);
+      if ((ref.current as any)?.__interval) {
+        clearInterval((ref.current as any).__interval);
+      }
+    };
+  }, [isInView, reducedMotion]);
+
+  return (
+    <div ref={ref} className="flex flex-wrap gap-x-3 mb-10 font-manrope" style={{ fontSize: '1rem' }}>
+      {WORDS.map((word, i) => (
+        <motion.span
+          key={word}
+          initial={{ opacity: 0, y: 8 }}
+          animate={
+            isInView
+              ? {
+                  opacity: highlighted === i ? 1 : 0.63,
+                  y: highlighted === i ? -2 : 0,
+                }
+              : { opacity: 0, y: 8 }
+          }
+          transition={
+            !initialDone
+              ? { duration: 0.6, delay: i * 0.1, ease: 'easeOut' }
+              : { duration: 0.4, ease: 'easeOut' }
+          }
+          style={{ color: 'var(--color-text)' }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+export default function HomeSection() {
   return (
     <section
-      id="hero"
+      id="home"
       className="min-h-screen flex items-center"
       style={{
         padding: 'clamp(5rem, 10vw, 8rem) clamp(1.5rem, 8vw, 6rem)',
@@ -64,15 +152,8 @@ export default function HeroSection() {
           </p>
         </ScrollReveal>
 
-        {/* One-liner */}
-        <ScrollReveal delay={0.2}>
-          <p
-            className="font-manrope mb-10"
-            style={{ fontSize: '1rem', color: 'var(--color-text-muted)', lineHeight: 1.7, maxWidth: '480px' }}
-          >
-            I build clean software and teach the theory behind it — currently finishing my CS degree at Michigan.
-          </p>
-        </ScrollReveal>
+        {/* One-liner with stagger + idle pulse */}
+        <OneLiner />
 
         {/* Links */}
         <ScrollReveal delay={0.25}>
