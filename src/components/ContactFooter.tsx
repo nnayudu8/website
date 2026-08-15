@@ -1,6 +1,7 @@
 'use client';
 
 import ScrollReveal from './ScrollReveal';
+import ResumeLink from './ResumeLink';
 
 const LINKS = [
   { label: 'GitHub', href: 'https://github.com/nnayudu8' },
@@ -58,17 +59,29 @@ export default function ContactFooter() {
         <div className="flex items-center gap-6 mb-16">
           {LINKS.map(({ label, href }, i) => (
             <span key={label} className="flex items-center gap-6">
-              <a
-                href={href}
-                target={href.startsWith('http') ? '_blank' : undefined}
-                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="font-manrope transition-opacity duration-200"
-                style={{ fontSize: '0.9375rem', color: 'var(--color-text-muted)', opacity: 0.7 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-              >
-                {label}
-              </a>
+              {label.startsWith('Resume') ? (
+                <ResumeLink
+                  linkId="footer"
+                  className="font-manrope transition-opacity duration-200"
+                  style={{ fontSize: '0.9375rem', color: 'var(--color-text-muted)', opacity: 0.7 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+                >
+                  {label}
+                </ResumeLink>
+              ) : (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-manrope transition-opacity duration-200"
+                  style={{ fontSize: '0.9375rem', color: 'var(--color-text-muted)', opacity: 0.7 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+                >
+                  {label}
+                </a>
+              )}
               {i < LINKS.length - 1 && (
                 <span style={{ color: 'var(--color-border)', userSelect: 'none' }}>·</span>
               )}

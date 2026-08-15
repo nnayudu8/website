@@ -55,7 +55,7 @@ export default function CustomCursor() {
         }}
         animate={{ opacity: hovering ? 0 : visible ? 1 : 0 }}
         transition={{ duration: 0.15 }}
-        className="fixed top-0 left-0 w-1.5 h-1.5 rounded-full pointer-events-none z-[9999]"
+        className="custom-cursor fixed top-0 left-0 w-1.5 h-1.5 rounded-full pointer-events-none z-[9999]"
       />
       <motion.div
         style={{
@@ -67,7 +67,7 @@ export default function CustomCursor() {
         }}
         animate={{ opacity: visible ? 1 : 0, scale: hovering ? 1.6 : 1 }}
         transition={{ duration: 0.2 }}
-        className="fixed top-0 left-0 w-7 h-7 rounded-full pointer-events-none z-[9999]"
+        className="custom-cursor fixed top-0 left-0 w-7 h-7 rounded-full pointer-events-none z-[9999]"
       />
     </>
   );

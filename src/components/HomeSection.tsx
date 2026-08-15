@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import ScrollReveal from './ScrollReveal';
+import ResumeLink from './ResumeLink';
 import { FiGithub, FiLinkedin, FiMail, FiFileText } from 'react-icons/fi';
 
 const LINKS = [
@@ -155,21 +156,31 @@ export default function HomeSection() {
         {/* Links */}
         <ScrollReveal delay={0.25}>
           <div className="flex items-center gap-6">
-            {LINKS.map(({ Icon, label, href }) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith('http') ? '_blank' : undefined}
-                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                aria-label={label}
-                className="transition-opacity duration-200"
-                style={{ color: 'var(--color-text-muted)', opacity: 0.6 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
-              >
-                <Icon size={20} />
-              </a>
-            ))}
+            {LINKS.map(({ Icon, label, href }) => {
+              const sharedProps = {
+                'aria-label': label,
+                className: 'transition-opacity duration-200',
+                style: { color: 'var(--color-text-muted)', opacity: 0.6 },
+                onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.opacity = '1'),
+                onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.opacity = '0.6'),
+              };
+
+              return label === 'Resume' ? (
+                <ResumeLink key={label} linkId="home" {...sharedProps}>
+                  <Icon size={20} />
+                </ResumeLink>
+              ) : (
+                <a
+                  key={label}
+                  href={href}
+                  target={href.startsWith('http') ? '_blank' : undefined}
+                  rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  {...sharedProps}
+                >
+                  <Icon size={20} />
+                </a>
+              );
+            })}
           </div>
         </ScrollReveal>
       </div>

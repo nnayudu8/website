@@ -1,5 +1,6 @@
 import "./globals.css";
 import CustomCursor from '@/components/CustomCursor';
+import { ResumeTransitionProvider } from '@/components/ResumeTransitionProvider';
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
 import localFont from 'next/font/local';
@@ -30,8 +31,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body className={`${sentient.variable} ${manrope.variable} font-manrope`}>
-        <CustomCursor />
-        {children}
+        <ResumeTransitionProvider>
+          <CustomCursor />
+          {children}
+        </ResumeTransitionProvider>
       </body>
     </html>
   );
