@@ -9,7 +9,7 @@ const LINKS = [
   { Icon: FiGithub, label: 'GitHub', href: 'https://github.com/nnayudu8' },
   { Icon: FiLinkedin, label: 'LinkedIn', href: 'https://linkedin.com/in/nidhilnayudu/' },
   { Icon: FiMail, label: 'Email', href: 'mailto:nnayudu@umich.edu' },
-  { Icon: FiFileText, label: 'Resume', href: '/Nidhil_Nayudu_resume.pdf' },
+  { Icon: FiFileText, label: 'Resume', href: '/resume' },
 ];
 
 const WORDS = ['building.', 'teaching.', 'hooping.', 'cooking.'];

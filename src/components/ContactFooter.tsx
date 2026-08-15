@@ -5,7 +5,7 @@ import ScrollReveal from './ScrollReveal';
 const LINKS = [
   { label: 'GitHub', href: 'https://github.com/nnayudu8' },
   { label: 'LinkedIn', href: 'https://linkedin.com/in/nidhilnayudu/' },
-  { label: 'Resume ↓', href: '/Nidhil_Nayudu_resume.pdf' },
+  { label: 'Resume ↓', href: '/resume' },
 ];
 
 export default function ContactFooter() {
