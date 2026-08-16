@@ -2,11 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { FiFileText } from 'react-icons/fi';
-import { isMobileResumeViewer } from '@/utils/isMobileResumeViewer';
 
-type TransitionPhase = 'idle' | 'covering' | 'covered' | 'revealing';
+type TransitionPhase = 'idle' | 'covering' | 'covered';
 
 interface Origin {
   x: number;
@@ -16,8 +14,6 @@ interface Origin {
 
 interface ResumeTransitionContextValue {
   openResume: (source: HTMLElement, linkId: string) => void;
-  closeResume: (source: HTMLElement) => void;
-  markResumeReady: () => void;
   transitioning: boolean;
 }
 
@@ -28,9 +24,6 @@ const CIRCLE_SIZE = 64;
 const INNER_CIRCLE_DELAY = 350;
 const INNER_CIRCLE_DURATION = 1000;
 const COVERED_AT = INNER_CIRCLE_DELAY + INNER_CIRCLE_DURATION + 50;
-const REVEAL_AT = 1900;
-const MAX_HOLD_AT = 4000;
-const FADE_DURATION = 250;
 
 function getOrigin(source: HTMLElement): Origin {
   const rect = source.getBoundingClientRect();
@@ -44,15 +37,10 @@ function getOrigin(source: HTMLElement): Origin {
 }
 
 export function ResumeTransitionProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const reducedMotion = useReducedMotion();
   const [phase, setPhase] = useState<TransitionPhase>('idle');
   const [origin, setOrigin] = useState<Origin>({ x: 0, y: 0, scale: 1 });
   const originLinkId = useRef<string | null>(null);
-  const resumeReady = useRef(false);
-  const minimumRevealReached = useRef(false);
-  const revealStarted = useRef(false);
-  const restoreFocusAfterReveal = useRef(false);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
 
   const clearTimers = useCallback(() => {
@@ -68,112 +56,57 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
     timers.current.add(timer);
   }, []);
 
-  const finish = useCallback(
-    (restoreFocus: boolean) => {
-      setPhase('idle');
-      document.body.style.overflow = '';
-      delete document.body.dataset.resumeTransitioning;
+  const resetTransition = useCallback(() => {
+    clearTimers();
+    setPhase('idle');
+    document.body.style.overflow = '';
+    delete document.body.dataset.resumeTransitioning;
 
-      if (restoreFocus && originLinkId.current) {
-        const linkId = originLinkId.current;
-        requestAnimationFrame(() => {
-          document.querySelector<HTMLElement>(`[data-resume-link="${linkId}"]`)?.focus();
-        });
-      }
-    },
-    [],
-  );
+    if (originLinkId.current) {
+      const linkId = originLinkId.current;
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`[data-resume-link="${linkId}"]`)?.focus();
+      });
+    }
+  }, [clearTimers]);
 
-  const revealTransition = useCallback((fadeDuration = FADE_DURATION) => {
-    if (revealStarted.current) return;
-    revealStarted.current = true;
-    setPhase('revealing');
-    schedule(() => finish(restoreFocusAfterReveal.current), fadeDuration);
-  }, [finish, schedule]);
-
-  const runTransition = useCallback(
-    (source: HTMLElement, destination: string, restoreFocus: boolean, waitForResume = false) => {
+  const openResume = useCallback(
+    (source: HTMLElement, linkId: string) => {
       if (phase !== 'idle') return;
-
+      originLinkId.current = linkId;
       clearTimers();
       setOrigin(getOrigin(source));
       document.body.style.overflow = 'hidden';
       document.body.dataset.resumeTransitioning = 'true';
-      resumeReady.current = false;
-      minimumRevealReached.current = false;
-      revealStarted.current = false;
-      restoreFocusAfterReveal.current = restoreFocus;
       setPhase('covering');
 
-      if (reducedMotion) {
-        schedule(() => router.push(destination), 40);
-        schedule(() => revealTransition(80), 80);
-        return;
-      }
-
+      const delay = reducedMotion ? 80 : COVERED_AT;
       schedule(() => {
         setPhase('covered');
-        router.push(destination);
-      }, COVERED_AT);
-
-      if (waitForResume) {
-        // Keep the wipe opaque until both its minimum runtime and the PDF iframe are ready.
-        schedule(() => {
-          minimumRevealReached.current = true;
-          if (resumeReady.current) revealTransition();
-        }, REVEAL_AT);
-        schedule(revealTransition, MAX_HOLD_AT);
-      } else {
-        schedule(revealTransition, REVEAL_AT);
-      }
+        // A document navigation keeps this fully covered page visible until the native PDF viewer is ready.
+        window.location.assign('/resume');
+      }, delay);
     },
-    [clearTimers, phase, reducedMotion, revealTransition, router, schedule],
+    [clearTimers, phase, reducedMotion, schedule],
   );
-
-  const openResume = useCallback(
-    (source: HTMLElement, linkId: string) => {
-      originLinkId.current = linkId;
-
-      if (isMobileResumeViewer()) {
-        if (phase !== 'idle') return;
-        clearTimers();
-        setOrigin(getOrigin(source));
-        document.body.style.overflow = 'hidden';
-        document.body.dataset.resumeTransitioning = 'true';
-        setPhase('covering');
-
-        const delay = reducedMotion ? 80 : COVERED_AT;
-        schedule(() => window.location.assign('/resume'), delay);
-        return;
-      }
-
-      runTransition(source, '/resume/view', false, true);
-    },
-    [clearTimers, phase, reducedMotion, runTransition, schedule],
-  );
-
-  const closeResume = useCallback(
-    (source: HTMLElement) => runTransition(source, '/', true),
-    [runTransition],
-  );
-
-  const markResumeReady = useCallback(() => {
-    resumeReady.current = true;
-    if (minimumRevealReached.current && phase !== 'idle') revealTransition();
-  }, [phase, revealTransition]);
 
   useEffect(() => {
+    // Back/forward cache restores the exact pre-navigation DOM, including transient React state.
+    const handlePageShow = () => resetTransition();
+    window.addEventListener('pageshow', handlePageShow);
+
     return () => {
+      window.removeEventListener('pageshow', handlePageShow);
       clearTimers();
       document.body.style.overflow = '';
       delete document.body.dataset.resumeTransitioning;
     };
-  }, [clearTimers]);
+  }, [clearTimers, resetTransition]);
 
   const transitioning = phase !== 'idle';
   const contextValue = useMemo(
-    () => ({ openResume, closeResume, markResumeReady, transitioning }),
-    [closeResume, markResumeReady, openResume, transitioning],
+    () => ({ openResume, transitioning }),
+    [openResume, transitioning],
   );
 
   return (
@@ -185,8 +118,7 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
           className="resume-transition-overlay"
           aria-hidden="true"
           initial={{ opacity: 1 }}
-          animate={{ opacity: phase === 'revealing' ? 0 : 1 }}
-          transition={{ duration: reducedMotion ? 0.12 : 0.18, ease: 'easeOut' }}
+          animate={{ opacity: 1 }}
         >
           {reducedMotion ? (
             <div className="resume-transition-reduced" />
@@ -215,7 +147,7 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
                   x: window.innerWidth / 2,
                   y: window.innerHeight / 2,
                   scale: phase === 'covering' ? 0.95 : 1.05,
-                  opacity: phase === 'covered' || phase === 'revealing' ? 0 : 1,
+                  opacity: phase === 'covered' ? 0 : 1,
                 }}
                 transition={{
                   x: {
