@@ -1,10 +1,12 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { FiFileText } from 'react-icons/fi';
 
-type TransitionPhase = 'idle' | 'covering' | 'covered';
+type TransitionPhase = 'idle' | 'covering' | 'covered' | 'revealing';
 
 interface Origin {
   x: number;
@@ -14,12 +16,14 @@ interface Origin {
 
 interface ResumeTransitionContextValue {
   openResume: (source: HTMLElement, linkId: string) => void;
+  resumeReady: () => void;
   transitioning: boolean;
 }
 
 const ResumeTransitionContext = createContext<ResumeTransitionContextValue | null>(null);
 
-const CIRCLE_SIZE = 64;
+// A larger source layer keeps the circle edge crisp when Safari rasterizes the scaled transform.
+const CIRCLE_SIZE = 512;
 // Navigation waits until the slower inner circle has completely covered the viewport.
 const INNER_CIRCLE_DELAY = 350;
 const INNER_CIRCLE_DURATION = 1000;
@@ -37,6 +41,7 @@ function getOrigin(source: HTMLElement): Origin {
 }
 
 export function ResumeTransitionProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const reducedMotion = useReducedMotion();
   const [phase, setPhase] = useState<TransitionPhase>('idle');
   const [origin, setOrigin] = useState<Origin>({ x: 0, y: 0, scale: 1 });
@@ -82,13 +87,20 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
 
       const delay = reducedMotion ? 80 : COVERED_AT;
       schedule(() => {
-        setPhase('covered');
-        // A document navigation keeps this fully covered page visible until the native PDF viewer is ready.
-        window.location.assign('/resume');
+        // Render the waiting state before starting the request so it can animate while the
+        // browser waits for the PDF response.
+        flushSync(() => setPhase('covered'));
+        router.push('/resume/view');
       }, delay);
     },
-    [clearTimers, phase, reducedMotion, schedule],
+    [clearTimers, phase, reducedMotion, router, schedule],
   );
+
+  const resumeReady = useCallback(() => {
+    if (phase !== 'covered') return;
+    setPhase('revealing');
+    schedule(resetTransition, reducedMotion ? 120 : 260);
+  }, [phase, reducedMotion, resetTransition, schedule]);
 
   useEffect(() => {
     // Back/forward cache restores the exact pre-navigation DOM, including transient React state.
@@ -105,8 +117,8 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
 
   const transitioning = phase !== 'idle';
   const contextValue = useMemo(
-    () => ({ openResume, transitioning }),
-    [openResume, transitioning],
+    () => ({ openResume, resumeReady, transitioning }),
+    [openResume, resumeReady, transitioning],
   );
 
   return (
@@ -115,10 +127,11 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
 
       {transitioning && (
         <motion.div
-          className="resume-transition-overlay"
+          className={`resume-transition-overlay${phase === 'covered' ? ' resume-transition-overlay--waiting' : ''}`}
           aria-hidden="true"
           initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: phase === 'revealing' ? 0 : 1 }}
+          transition={{ duration: reducedMotion ? 0.12 : 0.26, ease: 'easeOut' }}
         >
           {reducedMotion ? (
             <div className="resume-transition-reduced" />
@@ -126,13 +139,13 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
             <>
               <motion.div
                 className="resume-transition-circle resume-transition-circle--accent"
-                initial={{ x: origin.x, y: origin.y, scale: 0.25 }}
+                initial={{ x: origin.x, y: origin.y, scale: 16 / CIRCLE_SIZE }}
                 animate={{ x: window.innerWidth / 2, y: window.innerHeight / 2, scale: origin.scale }}
                 transition={{ duration: 1.06, delay: 0.12, ease: [0.65, 0, 0.35, 1] }}
               />
               <motion.div
                 className="resume-transition-circle resume-transition-circle--surface"
-                initial={{ x: origin.x, y: origin.y, scale: 0.12 }}
+                initial={{ x: origin.x, y: origin.y, scale: 8 / CIRCLE_SIZE }}
                 animate={{ x: window.innerWidth / 2, y: window.innerHeight / 2, scale: origin.scale }}
                 transition={{
                   duration: INNER_CIRCLE_DURATION / 1000,
@@ -147,7 +160,7 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
                   x: window.innerWidth / 2,
                   y: window.innerHeight / 2,
                   scale: phase === 'covering' ? 0.95 : 1.05,
-                  opacity: phase === 'covered' ? 0 : 1,
+                  opacity: 1,
                 }}
                 transition={{
                   x: {
@@ -167,7 +180,9 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
                   opacity: { duration: 0.3 },
                 }}
               >
-                <FiFileText size={68} />
+                <div className="resume-transition-icon">
+                  <FiFileText size={68} />
+                </div>
               </motion.div>
             </>
           )}

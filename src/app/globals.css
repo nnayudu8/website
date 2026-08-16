@@ -102,9 +102,9 @@ body[data-resume-transitioning='true'] .custom-cursor {
 }
 
 .resume-transition-circle {
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
+  width: 512px;
+  height: 512px;
+  margin: -256px 0 0 -256px;
   border-radius: 9999px;
 }
 
@@ -126,4 +126,100 @@ body[data-resume-transitioning='true'] .custom-cursor {
   display: grid;
   place-items: center;
   color: var(--color-text);
+}
+
+.resume-transition-icon {
+  width: 68px;
+  height: 68px;
+}
+
+.resume-transition-icon {
+  animation: resume-icon-pulse 2.5s ease-in-out 1.55s infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes resume-icon-pulse {
+  0%, 36%, 100% { transform: scale(1); opacity: 1; }
+  18% { transform: scale(1.2); opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-transition-icon {
+    animation: none !important;
+  }
+}
+
+.resume-viewer {
+  --resume-viewer-content-width: 1180px;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  background: var(--color-surface);
+}
+
+.resume-viewer-toolbar {
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  width: min(100%, var(--resume-viewer-content-width));
+  align-self: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.resume-viewer-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.resume-viewer-action:hover,
+.resume-viewer-action:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  outline: none;
+}
+
+.resume-viewer-frame {
+  width: min(100%, var(--resume-viewer-content-width));
+  min-height: 0;
+  flex: 1;
+  align-self: center;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-bg);
+}
+
+@media (max-width: 480px) {
+  .resume-viewer-action span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .resume-viewer-action {
+    justify-content: center;
+    width: 2.5rem;
+    padding: 0;
+  }
 }

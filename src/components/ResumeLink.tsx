@@ -15,7 +15,7 @@ export default function ResumeLink({ linkId, onClick, ...props }: ResumeLinkProp
     <a
       {...props}
       ref={ref}
-      href="/resume"
+      href="/resume/view"
       data-resume-link={linkId}
       aria-disabled={transitioning || undefined}
       onClick={(event) => {
