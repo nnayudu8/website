@@ -97,7 +97,6 @@ body[data-resume-transitioning='true'] .custom-cursor {
   position: absolute;
   top: 0;
   left: 0;
-  will-change: transform, opacity;
   transform-origin: center;
 }
 
@@ -106,6 +105,7 @@ body[data-resume-transitioning='true'] .custom-cursor {
   height: 512px;
   margin: -256px 0 0 -256px;
   border-radius: 9999px;
+  will-change: transform;
 }
 
 .resume-transition-circle--accent {
@@ -126,14 +126,12 @@ body[data-resume-transitioning='true'] .custom-cursor {
   display: grid;
   place-items: center;
   color: var(--color-text);
+  will-change: transform, opacity;
 }
 
 .resume-transition-icon {
   width: 68px;
   height: 68px;
-}
-
-.resume-transition-icon {
   animation: resume-icon-pulse 2.5s ease-in-out 1.55s infinite;
   will-change: transform, opacity;
 }

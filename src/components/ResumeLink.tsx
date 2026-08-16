@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { useResumeTransition } from './ResumeTransitionProvider';
 
 interface ResumeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -8,13 +7,11 @@ interface ResumeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> 
 }
 
 export default function ResumeLink({ linkId, onClick, ...props }: ResumeLinkProps) {
-  const ref = useRef<HTMLAnchorElement>(null);
   const { openResume, transitioning } = useResumeTransition();
 
   return (
     <a
       {...props}
-      ref={ref}
       href="/resume/view"
       data-resume-link={linkId}
       aria-disabled={transitioning || undefined}

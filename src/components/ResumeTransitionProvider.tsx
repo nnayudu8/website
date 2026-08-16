@@ -127,7 +127,7 @@ export function ResumeTransitionProvider({ children }: { children: React.ReactNo
 
       {transitioning && (
         <motion.div
-          className={`resume-transition-overlay${phase === 'covered' ? ' resume-transition-overlay--waiting' : ''}`}
+          className="resume-transition-overlay"
           aria-hidden="true"
           initial={{ opacity: 1 }}
           animate={{ opacity: phase === 'revealing' ? 0 : 1 }}

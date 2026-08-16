@@ -6,7 +6,7 @@ import ResumeLink from './ResumeLink';
 const LINKS = [
   { label: 'GitHub', href: 'https://github.com/nnayudu8' },
   { label: 'LinkedIn', href: 'https://linkedin.com/in/nidhilnayudu/' },
-  { label: 'Resume ↓', href: '/resume' },
+  { label: 'Resume ↓', href: '/resume/view' },
 ];
 
 export default function ContactFooter() {
